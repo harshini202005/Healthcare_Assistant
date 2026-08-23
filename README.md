@@ -36,6 +36,20 @@ uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 2. **Frontend**: Open `frontend/index.html` in your browser
 3. **API Docs**: http://localhost:8000/docs
 
+## 🔑 Demo Accounts
+
+The app ships with a Doctor Dashboard + patient portal. To try it without creating your own account, seed the demo data first (`python seed_database.py` — needs `SUPABASE_URL`/`SUPABASE_KEY` set, see `SUPABASE_SETUP.md`), then sign in with any of these on the login page (also shown there under "Try a demo account"):
+
+| Role | Name | Email | Password |
+|---|---|---|---|
+| Patient | Harshini | `harshini.demo@healthcare-demo.com` | `Patient@123` |
+| Patient | Rohan | `rohan.demo@healthcare-demo.com` | `Patient@123` |
+| Doctor | Dr. Priya (Dermatology) | `priya.derm@healthcare-demo.com` | `Doctor@123` |
+| Doctor | Dr. Rahul (Cardiology) | `rahul.cardio@healthcare-demo.com` | `Doctor@123` |
+| Doctor | Dr. Ananya (Nutrition) | `ananya.nutrition@healthcare-demo.com` | `Doctor@123` |
+
+These are seeded demo/test accounts only — no real patient data.
+
 ## ✨ Features
 
 ### 💬 Smart Chat Interface

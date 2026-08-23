@@ -428,6 +428,37 @@
         .auth-gate-brand p { font-size: 0.88em; color: #868e96; }
         .auth-gate-submit { width: 100%; margin-top: 6px; }
 
+        /* ── Demo accounts card (seeded users, for anyone trying the live demo) ──
+           Fixed to the bottom-right of the screen so it reads like a reference
+           card: the visitor reads the email/password here and types them into
+           the form themselves, rather than clicking anything. */
+        .demo-accounts-float {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 250px;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+            padding: 14px 16px;
+            font-size: 0.78em;
+            z-index: 20;
+        }
+        .demo-accounts-float h4 {
+            font-size: 0.95em; margin: 0 0 4px; color: #212529; display: flex; align-items: center; gap: 6px;
+        }
+        .demo-accounts-float .daf-hint { color: #868e96; font-size: 0.85em; margin-bottom: 10px; }
+        .daf-group-label { font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #adb5bd; margin: 10px 0 4px; }
+        .daf-row { padding: 6px 0; border-bottom: 1px dashed #f1f3f5; }
+        .daf-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .daf-row .dab-name { display: block; font-weight: 600; color: #212529; }
+        .daf-row .dab-cred { display: block; font-family: monospace; color: #495057; word-break: break-all; }
+        .daf-row .dab-cred b { color: #667eea; font-family: inherit; font-weight: 600; }
+        @media (max-width: 760px) {
+            .demo-accounts-float { position: static; width: auto; margin: 18px auto 0; max-width: 440px; }
+        }
+
         /* ── Dashboard ── */
         .dashboard-greeting { text-align: center; }
         .dashboard-stats { display: flex; justify-content: center; gap: 16px; margin: 18px 0; }
@@ -680,6 +711,40 @@
 
         <div style="text-align:center;margin-top:14px;font-size:0.85em;">
             <a href="#" id="authAudienceLink" onclick="event.preventDefault(); toggleAuthAudience();" style="color:#667eea;text-decoration:none;font-weight:600;">👨‍⚕️ Doctor? Sign in here</a>
+        </div>
+
+    </div>
+
+    <!-- Seeded demo accounts (see seed_database.py) — public/portfolio demo data,
+         not real patient info. Read the email/password here and type them into
+         the form on the left, then hit Sign In (toggle "Doctor? Sign in here"
+         first for the doctor rows). -->
+    <div class="demo-accounts-float">
+        <h4>🔑 Demo Accounts</h4>
+        <p class="daf-hint">Type these into the form to sign in.</p>
+
+        <div class="daf-group-label">Patients</div>
+        <div class="daf-row">
+            <span class="dab-name">Harshini</span>
+            <span class="dab-cred">harshini.demo@healthcare-demo.com<br><b>Patient@123</b></span>
+        </div>
+        <div class="daf-row">
+            <span class="dab-name">Rohan</span>
+            <span class="dab-cred">rohan.demo@healthcare-demo.com<br><b>Patient@123</b></span>
+        </div>
+
+        <div class="daf-group-label">Doctors</div>
+        <div class="daf-row">
+            <span class="dab-name">Dr. Priya · Dermatology</span>
+            <span class="dab-cred">priya.derm@healthcare-demo.com<br><b>Doctor@123</b></span>
+        </div>
+        <div class="daf-row">
+            <span class="dab-name">Dr. Rahul · Cardiology</span>
+            <span class="dab-cred">rahul.cardio@healthcare-demo.com<br><b>Doctor@123</b></span>
+        </div>
+        <div class="daf-row">
+            <span class="dab-name">Dr. Ananya · Nutrition</span>
+            <span class="dab-cred">ananya.nutrition@healthcare-demo.com<br><b>Doctor@123</b></span>
         </div>
     </div>
 </div>
