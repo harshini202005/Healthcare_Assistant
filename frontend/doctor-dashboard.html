@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doctor Dashboard — Healthcare Assistant</title>
+<style>
+    :root {
+        --primary: #667eea;
+        --primary-dark: #764ba2;
+        --bg: #f4f6fb;
+        --card: #ffffff;
+        --border: #e9ecef;
+        --text: #212529;
+        --text-muted: #6c757d;
+        --text-faint: #adb5bd;
+        --sidebar-w: 240px;
+
+        --status-pending-bg: #fff8e1; --status-pending-fg: #f9a825;
+        --status-confirmed-bg: #e8f5e9; --status-confirmed-fg: #2e7d32;
+        --status-completed-bg: #e3f2fd; --status-completed-fg: #1565c0;
+        --status-cancelled-bg: #ffebee; --status-cancelled-fg: #c62828;
+        --status-rejected-bg: #ffebee; --status-rejected-fg: #c62828;
+        --status-no_show-bg: #fff3e0; --status-no_show-fg: #e65100;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+    }
+    .hidden { display: none !important; }
+    button { font-family: inherit; }
+    input, select, textarea { font-family: inherit; }
+
+    /* ═══════════════ LOGIN SCREEN ═══════════════ */
+    #loginScreen {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        padding: 20px;
+    }
+    .login-card {
+        background: white;
+        border-radius: 18px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+        padding: 40px 36px;
+        max-width: 400px;
+        width: 100%;
+    }
+    .login-brand { text-align: center; margin-bottom: 26px; }
+    .login-brand .icon { font-size: 2.4em; margin-bottom: 6px; }
+    .login-brand h1 { font-size: 1.3em; color: var(--text); margin-bottom: 4px; }
+    .login-brand p { color: var(--text-muted); font-size: 0.85em; }
+    .login-field { margin-bottom: 16px; }
+    .login-field label { display: block; font-size: 0.82em; font-weight: 600; color: #495057; margin-bottom: 6px; }
+    .login-field input {
+        width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 10px;
+        font-size: 0.95em; transition: border-color 0.2s;
+    }
+    .login-field input:focus { outline: none; border-color: var(--primary); }
+    .login-submit {
+        width: 100%; padding: 12px; border: none; border-radius: 10px; margin-top: 6px;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white; font-weight: 700; font-size: 0.95em; cursor: pointer; transition: opacity 0.2s;
+    }
+    .login-submit:hover { opacity: 0.92; }
+    .login-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    .login-status { margin-top: 12px; font-size: 0.85em; text-align: center; min-height: 1.2em; }
+    .login-status.error { color: #c62828; }
+    .login-hint { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); text-align: center; font-size: 0.78em; color: var(--text-faint); }
+    .login-back { display: block; text-align: center; margin-top: 14px; font-size: 0.83em; color: var(--primary); cursor: pointer; text-decoration: none; }
+
+    /* ═══════════════ APP SHELL ═══════════════ */
+    #app { display: flex; min-height: 100vh; }
+
+    .sidebar {
+        width: var(--sidebar-w); flex-shrink: 0; background: white; border-right: 1px solid var(--border);
+        display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 40;
+        transition: transform 0.25s ease;
+    }
+    .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 22px 20px; border-bottom: 1px solid var(--border); }
+    .sidebar-brand .icon { font-size: 1.6em; }
+    .sidebar-brand .name { font-weight: 800; font-size: 1.02em; color: var(--text); line-height: 1.2; }
+    .sidebar-brand .sub { font-size: 0.72em; color: var(--text-muted); }
+    .sidebar-nav { flex: 1; overflow-y: auto; padding: 14px 12px; }
+    .nav-item {
+        display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px; cursor: pointer;
+        color: #495057; font-weight: 600; font-size: 0.9em; margin-bottom: 3px; transition: background 0.15s, color 0.15s;
+        position: relative;
+    }
+    .nav-item:hover { background: #f1f3f9; }
+    .nav-item.active { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; }
+    .nav-item .nav-icon { font-size: 1.1em; width: 22px; text-align: center; }
+    .nav-item .nav-badge {
+        margin-left: auto; background: #e53935; color: white; font-size: 0.72em; font-weight: 700;
+        padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center;
+    }
+    .nav-item.active .nav-badge { background: rgba(255,255,255,0.3); }
+    .sidebar-footer { padding: 14px 20px; border-top: 1px solid var(--border); font-size: 0.72em; color: var(--text-faint); }
+
+    .main { flex: 1; margin-left: var(--sidebar-w); display: flex; flex-direction: column; min-height: 100vh; min-width: 0; }
+
+    .topbar {
+        background: white; border-bottom: 1px solid var(--border); padding: 12px 24px;
+        display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 30;
+    }
+    .hamburger { display: none; background: none; border: none; font-size: 1.4em; cursor: pointer; color: var(--text); }
+    .topbar-search { flex: 1; max-width: 420px; position: relative; }
+    .topbar-search input {
+        width: 100%; padding: 9px 14px 9px 36px; border: 1.5px solid var(--border); border-radius: 20px;
+        font-size: 0.88em; background: var(--bg);
+    }
+    .topbar-search input:focus { outline: none; border-color: var(--primary); background: white; }
+    .topbar-search .icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-faint); font-size: 0.9em; }
+    .topbar-spacer { flex: 1; }
+
+    .bell-wrap { position: relative; }
+    .bell-btn {
+        background: var(--bg); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+        font-size: 1.15em; position: relative; display: flex; align-items: center; justify-content: center;
+        transition: background 0.15s;
+    }
+    .bell-btn:hover { background: #e9ecef; }
+    .bell-count {
+        position: absolute; top: -2px; right: -2px; background: #e53935; color: white; font-size: 0.65em;
+        font-weight: 700; padding: 1px 5px; border-radius: 10px; min-width: 16px; text-align: center; line-height: 1.4;
+    }
+    .notif-dropdown {
+        position: absolute; top: 48px; right: 0; width: 360px; max-height: 440px; overflow-y: auto;
+        background: white; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.18); border: 1px solid var(--border);
+        z-index: 50;
+    }
+    .notif-dropdown-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .notif-dropdown-header strong { font-size: 0.9em; }
+    .notif-dropdown-header button { background: none; border: none; color: var(--primary); font-size: 0.78em; font-weight: 600; cursor: pointer; }
+    .notif-item {
+        display: flex; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #f1f3f5; cursor: pointer; transition: background 0.15s;
+    }
+    .notif-item:hover { background: #f8f9fb; }
+    .notif-item.unread { background: #f4f7ff; }
+    .notif-item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-top: 6px; flex-shrink: 0; }
+    .notif-item .dot.read { background: transparent; }
+    .notif-item .body { flex: 1; min-width: 0; }
+    .notif-item .title { font-weight: 700; font-size: 0.85em; margin-bottom: 2px; }
+    .notif-item .msg { font-size: 0.8em; color: var(--text-muted); line-height: 1.4; }
+    .notif-item .time { font-size: 0.7em; color: var(--text-faint); margin-top: 4px; }
+    .notif-empty { padding: 30px 16px; text-align: center; color: var(--text-faint); font-size: 0.85em; }
+
+    .profile-chip { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 6px 4px 4px; border-radius: 24px; transition: background 0.15s; position: relative; }
+    .profile-chip:hover { background: var(--bg); }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+    .avatar-fallback {
+        width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9em;
+    }
+    .profile-chip .who { display: none; }
+    .profile-chip .who .name { font-size: 0.85em; font-weight: 700; line-height: 1.2; }
+    .profile-chip .who .spec { font-size: 0.72em; color: var(--text-muted); }
+    @media (min-width: 640px) { .profile-chip .who { display: block; } }
+    .profile-menu {
+        position: absolute; top: 48px; right: 0; background: white; border: 1px solid var(--border); border-radius: 10px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.15); min-width: 160px; z-index: 50; overflow: hidden;
+    }
+    .profile-menu button {
+        display: block; width: 100%; text-align: left; padding: 10px 14px; background: none; border: none; cursor: pointer;
+        font-size: 0.85em; font-weight: 600; color: var(--text);
+    }
+    .profile-menu button:hover { background: var(--bg); }
+
+    .content { padding: 26px 28px 60px; flex: 1; }
+    .view { display: none; }
+    .view.active { display: block; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    .view-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+    .view-header h2 { font-size: 1.4em; font-weight: 800; }
+    .view-header .sub { color: var(--text-muted); font-size: 0.88em; margin-top: 2px; }
+
+    /* ═══════════════ CARDS / STATS ═══════════════ */
+    .stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 26px; }
+    @media (max-width: 1100px) { .stat-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 700px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+    .stat-card {
+        background: var(--card); border-radius: 14px; padding: 18px 18px; border: 1px solid var(--border);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+    .stat-card .top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .stat-card .icon { font-size: 1.3em; opacity: 0.85; }
+    .stat-card .value { font-size: 1.9em; font-weight: 800; margin-top: 6px; color: var(--text); }
+    .stat-card .label { font-size: 0.8em; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+    .stat-card.pending .value { color: #f9a825; }
+
+    .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 980px) { .panel-grid { grid-template-columns: 1fr; } }
+    .panel {
+        background: var(--card); border-radius: 14px; border: 1px solid var(--border); padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03); margin-bottom: 20px;
+    }
+    .panel h3 { font-size: 1em; font-weight: 800; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .panel .empty { color: var(--text-faint); font-size: 0.85em; text-align: center; padding: 24px 0; }
+
+    .row-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f3f5; cursor: pointer; }
+    .row-item:last-child { border-bottom: none; }
+    .row-item:hover .row-title { color: var(--primary); }
+    .row-avatar {
+        width: 38px; height: 38px; border-radius: 50%; background: var(--bg); display: flex; align-items: center;
+        justify-content: center; font-weight: 700; color: var(--primary); flex-shrink: 0; font-size: 0.85em;
+    }
+    .row-body { flex: 1; min-width: 0; }
+    .row-title { font-weight: 700; font-size: 0.88em; transition: color 0.15s; }
+    .row-sub { font-size: 0.78em; color: var(--text-muted); margin-top: 1px; }
+
+    /* ═══════════════ BADGES ═══════════════ */
+    .badge {
+        display: inline-block; font-size: 0.72em; font-weight: 700; padding: 3px 10px; border-radius: 12px;
+        text-transform: capitalize; white-space: nowrap;
+    }
+    .badge.pending { background: var(--status-pending-bg); color: var(--status-pending-fg); }
+    .badge.confirmed { background: var(--status-confirmed-bg); color: var(--status-confirmed-fg); }
+    .badge.completed { background: var(--status-completed-bg); color: var(--status-completed-fg); }
+    .badge.cancelled { background: var(--status-cancelled-bg); color: var(--status-cancelled-fg); }
+    .badge.rejected { background: var(--status-rejected-bg); color: var(--status-rejected-fg); }
+    .badge.no_show { background: var(--status-no_show-bg); color: var(--status-no_show-fg); }
+
+    /* ═══════════════ TOOLBAR / FILTERS ═══════════════ */
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+    .toolbar input[type="text"], .toolbar input[type="search"] {
+        padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.86em; min-width: 220px;
+    }
+    .toolbar input:focus, .toolbar select:focus { outline: none; border-color: var(--primary); }
+    .chip-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip {
+        padding: 7px 14px; border-radius: 18px; border: 1.5px solid var(--border); background: white; font-size: 0.8em;
+        font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; white-space: nowrap;
+    }
+    .chip.active { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-color: transparent; }
+    select.filter-select { padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.85em; background: white; }
+
+    /* ═══════════════ TABLE / LIST CARDS ═══════════════ */
+    .data-card {
+        background: var(--card); border-radius: 14px; border: 1px solid var(--border); overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+    .appt-row, .patient-row {
+        display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid #f1f3f5; flex-wrap: wrap;
+    }
+    .appt-row:last-child, .patient-row:last-child { border-bottom: none; }
+    .appt-row:hover, .patient-row:hover { background: #fafbff; }
+    .appt-main { flex: 1; min-width: 220px; }
+    .appt-main .name { font-weight: 700; font-size: 0.92em; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .appt-main .meta { font-size: 0.8em; color: var(--text-muted); margin-top: 3px; }
+    .appt-main .reason { font-size: 0.8em; color: var(--text-muted); margin-top: 2px; font-style: italic; }
+    .appt-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+        padding: 7px 14px; border-radius: 8px; font-size: 0.8em; font-weight: 700; cursor: pointer; border: 1.5px solid transparent;
+        transition: all 0.15s; white-space: nowrap;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-accept { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+    .btn-accept:hover:not(:disabled) { background: #2e7d32; color: white; }
+    .btn-reject { background: #ffebee; color: #c62828; border-color: #ef9a9a; }
+    .btn-reject:hover:not(:disabled) { background: #c62828; color: white; }
+    .btn-complete { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
+    .btn-complete:hover:not(:disabled) { background: #1565c0; color: white; }
+    .btn-cancel { background: #fff3e0; color: #e65100; border-color: #ffcc80; }
+    .btn-cancel:hover:not(:disabled) { background: #e65100; color: white; }
+    .btn-secondary { background: var(--bg); color: var(--text); border-color: var(--border); }
+    .btn-secondary:hover:not(:disabled) { background: #e9ecef; }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
+    .btn-primary:hover:not(:disabled) { opacity: 0.9; }
+
+    .empty-state { text-align: center; padding: 50px 20px; color: var(--text-faint); }
+    .empty-state .icon { font-size: 2.2em; margin-bottom: 10px; }
+    .loading-state { text-align: center; padding: 40px; color: var(--text-faint); font-size: 0.9em; }
+
+    /* ═══════════════ PATIENT DETAIL ═══════════════ */
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--primary); font-weight: 700; font-size: 0.85em; cursor: pointer; margin-bottom: 14px; }
+    .patient-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+    .patient-header .big-avatar {
+        width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5em; font-weight: 800;
+    }
+    .patient-header h2 { font-size: 1.3em; }
+    .patient-header .meta { color: var(--text-muted); font-size: 0.85em; margin-top: 3px; }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+    .info-grid .item .k { font-size: 0.72em; color: var(--text-faint); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+    .info-grid .item .v { font-size: 0.92em; font-weight: 600; margin-top: 3px; }
+
+    table.simple-table { width: 100%; border-collapse: collapse; font-size: 0.86em; }
+    table.simple-table th { text-align: left; padding: 10px 12px; color: var(--text-muted); font-weight: 700; font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.02em; border-bottom: 2px solid var(--border); }
+    table.simple-table td { padding: 12px 12px; border-bottom: 1px solid #f1f3f5; }
+    table.simple-table tr:last-child td { border-bottom: none; }
+    .table-wrap { overflow-x: auto; }
+
+    .source-tag { font-size: 0.68em; font-weight: 700; padding: 2px 8px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .source-tag.ai { background: #ede7f6; color: #5e35b1; }
+    .source-tag.patient { background: #e0f2f1; color: #00695c; }
+    .source-tag.doctor { background: #fff3e0; color: #e65100; }
+
+    .qa-card, .diet-card, .note-card { border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; background: #fafbff; }
+    .qa-card .q { font-weight: 700; font-size: 0.9em; margin-bottom: 6px; }
+    .qa-card .a { font-size: 0.85em; color: #495057; line-height: 1.5; }
+    .diet-card .meal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 10px; margin-top: 10px; }
+    .diet-card .meal { background: white; border-radius: 8px; padding: 10px 12px; border: 1px solid var(--border); }
+    .diet-card .meal .k { font-size: 0.7em; font-weight: 700; color: var(--primary); text-transform: uppercase; }
+    .diet-card .meal .v { font-size: 0.82em; margin-top: 3px; }
+    .diet-card .plan-text { white-space: pre-wrap; font-size: 0.85em; margin-top: 10px; line-height: 1.55; background: white; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
+    .note-card .note-text { font-size: 0.87em; line-height: 1.5; }
+    .note-card .note-meta { font-size: 0.72em; color: var(--text-faint); margin-top: 6px; }
+    .disclaimer-line { font-size: 0.75em; color: var(--text-faint); margin: 10px 0 16px; padding: 8px 12px; background: #fff8e1; border-radius: 8px; }
+
+    .note-form { display: flex; gap: 10px; margin-top: 10px; }
+    .note-form textarea { flex: 1; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.85em; resize: vertical; min-height: 44px; }
+    .note-form textarea:focus { outline: none; border-color: var(--primary); }
+
+    /* ═══════════════ AVAILABILITY ═══════════════ */
+    .avail-day {
+        display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid #f1f3f5; flex-wrap: wrap;
+    }
+    .avail-day:last-child { border-bottom: none; }
+    .avail-day .day-name { width: 110px; font-weight: 700; font-size: 0.9em; }
+    .toggle-switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; inset: 0; background: #ced4da; border-radius: 24px; cursor: pointer; transition: 0.2s; }
+    .toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.2s; }
+    .toggle-switch input:checked + .toggle-slider { background: var(--primary); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+    .avail-day input[type="time"] { padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.85em; }
+    .avail-day .unavailable-label { color: var(--text-faint); font-size: 0.85em; font-style: italic; }
+
+    /* ═══════════════ PROFILE FORM ═══════════════ */
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .form-field label { display: block; font-size: 0.78em; font-weight: 700; color: #495057; margin-bottom: 6px; }
+    .form-field input, .form-field textarea {
+        width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.88em;
+    }
+    .form-field input:focus, .form-field textarea:focus { outline: none; border-color: var(--primary); }
+    .form-field input:disabled { background: #f1f3f5; color: var(--text-muted); }
+    .form-field.full { grid-column: 1 / -1; }
+    .save-bar { display: flex; justify-content: flex-end; margin-top: 18px; gap: 10px; }
+    .save-status { font-size: 0.82em; color: #2e7d32; align-self: center; }
+
+    /* ═══════════════ MODAL ═══════════════ */
+    .modal-overlay {
+        display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100;
+        align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-card { background: white; border-radius: 16px; max-width: 420px; width: 100%; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,0.3); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--border); }
+    .modal-header h3 { font-size: 1.05em; }
+    .modal-close { background: none; border: none; font-size: 1.2em; cursor: pointer; color: var(--text-muted); }
+    .modal-body { padding: 20px 22px; }
+    .modal-footer { padding: 16px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+    .modal-body .form-field { margin-bottom: 14px; }
+
+    /* ═══════════════ RESPONSIVE ═══════════════ */
+    @media (max-width: 880px) {
+        .sidebar { transform: translateX(-100%); box-shadow: 0 0 30px rgba(0,0,0,0.15); }
+        .sidebar.open { transform: translateX(0); }
+        .main { margin-left: 0; }
+        .hamburger { display: block; }
+        .topbar-search { display: none; }
+        .stat-grid { grid-template-columns: repeat(2, 1fr); }
+        .content { padding: 18px 14px 50px; }
+    }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 39; }
+    .sidebar-overlay.show { display: block; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════ LOGIN SCREEN ══════════════════════ -->
+<div id="loginScreen">
+    <div class="login-card">
+        <div class="login-brand">
+            <div class="icon">🏥</div>
+            <h1>Doctor Sign In</h1>
+            <p>Sign in with your provisioned doctor account to view your dashboard.</p>
+        </div>
+        <form id="loginForm" onsubmit="event.preventDefault(); submitLogin();">
+            <div class="login-field">
+                <label for="loginEmail">Email</label>
+                <input type="email" id="loginEmail" autocomplete="username" required />
+            </div>
+            <div class="login-field">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" autocomplete="current-password" required />
+            </div>
+            <button type="submit" class="login-submit" id="loginSubmitBtn">Sign In</button>
+            <div class="login-status" id="loginStatus"></div>
+        </form>
+        <a class="login-back" href="/">← Back to patient sign in</a>
+    </div>
+</div>
+
+<!-- ══════════════════════ APP SHELL ══════════════════════ -->
+<div id="app" class="hidden">
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <span class="icon">🏥</span>
+            <div>
+                <div class="name">Healthcare</div>
+                <div class="sub">Doctor Portal</div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-item" data-nav="dashboard" onclick="switchView('dashboard')"><span class="nav-icon">📊</span> Dashboard</div>
+            <div class="nav-item" data-nav="appointments" onclick="switchView('appointments')"><span class="nav-icon">📅</span> Appointments<span class="nav-badge hidden" id="navPendingBadge"></span></div>
+            <div class="nav-item" data-nav="patients" onclick="switchView('patients')"><span class="nav-icon">🧑‍🤝‍🧑</span> Patients</div>
+            <div class="nav-item" data-nav="availability" onclick="switchView('availability')"><span class="nav-icon">🕒</span> Availability</div>
+            <div class="nav-item" data-nav="diet-plans" onclick="switchView('diet-plans')"><span class="nav-icon">🥗</span> Diet Plans</div>
+            <div class="nav-item" data-nav="health-queries" onclick="switchView('health-queries')"><span class="nav-icon">💬</span> Health Queries</div>
+            <div class="nav-item" data-nav="notifications" onclick="switchView('notifications')"><span class="nav-icon">🔔</span> Notifications<span class="nav-badge hidden" id="navUnreadBadge"></span></div>
+            <div class="nav-item" data-nav="profile" onclick="switchView('profile')"><span class="nav-icon">👤</span> Profile</div>
+            <div class="nav-item" data-nav="settings" onclick="switchView('settings')"><span class="nav-icon">⚙️</span> Settings</div>
+        </nav>
+        <div class="sidebar-footer">Healthcare Assistant © 2026</div>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+            <button class="hamburger" onclick="toggleSidebar()">☰</button>
+            <div class="topbar-search">
+                <span class="icon">🔍</span>
+                <input type="search" id="topSearchInput" placeholder="Search your patients…" onkeydown="if(event.key==='Enter') topSearchSubmit();" />
+            </div>
+            <div class="topbar-spacer"></div>
+            <div class="bell-wrap">
+                <button class="bell-btn" onclick="toggleNotifDropdown()" title="Notifications">
+                    🔔
+                    <span class="bell-count hidden" id="bellCount">0</span>
+                </button>
+                <div class="notif-dropdown hidden" id="notifDropdown">
+                    <div class="notif-dropdown-header">
+                        <strong>Notifications</strong>
+                        <button onclick="markAllNotificationsRead()">Mark all read</button>
+                    </div>
+                    <div id="notifDropdownList"><div class="notif-empty">Loading…</div></div>
+                </div>
+            </div>
+            <div class="profile-chip" onclick="toggleProfileMenu()">
+                <img class="avatar hidden" id="topAvatarImg" alt="" />
+                <div class="avatar-fallback" id="topAvatarFallback">D</div>
+                <div class="who">
+                    <div class="name" id="topDoctorName">Doctor</div>
+                    <div class="spec" id="topDoctorSpecialty"></div>
+                </div>
+                <div class="profile-menu hidden" id="profileMenu">
+                    <button onclick="switchView('profile')">👤 My Profile</button>
+                    <button onclick="doDoctorLogout()">🚪 Log Out</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="content" id="content">
+
+            <!-- ═══ DASHBOARD ═══ -->
+            <section class="view active" id="view-dashboard">
+                <div class="view-header">
+                    <div>
+                        <h2 id="dashGreeting">Welcome back 👋</h2>
+                        <div class="sub">Here's what's happening with your patients today.</div>
+                    </div>
+                </div>
+                <div class="stat-grid">
+                    <div class="stat-card"><div class="top"><span class="icon">🧑‍🤝‍🧑</span></div><div class="value" id="statTotalPatients">–</div><div class="label">Total Patients</div></div>
+                    <div class="stat-card"><div class="top"><span class="icon">📅</span></div><div class="value" id="statToday">–</div><div class="label">Today's Appointments</div></div>
+                    <div class="stat-card"><div class="top"><span class="icon">⏭️</span></div><div class="value" id="statUpcoming">–</div><div class="label">Upcoming Appointments</div></div>
+                    <div class="stat-card"><div class="top"><span class="icon">✅</span></div><div class="value" id="statCompleted">–</div><div class="label">Completed Appointments</div></div>
+                    <div class="stat-card pending"><div class="top"><span class="icon">⏳</span></div><div class="value" id="statPending">–</div><div class="label">Pending Requests</div></div>
+                </div>
+                <div class="panel-grid">
+                    <div class="panel">
+                        <h3>📅 Today's Schedule</h3>
+                        <div id="dashTodaySchedule"><div class="empty">Loading…</div></div>
+                    </div>
+                    <div class="panel">
+                        <h3>📅 Upcoming This Week</h3>
+                        <div id="dashUpcomingWeek"><div class="empty">Loading…</div></div>
+                    </div>
+                    <div class="panel">
+                        <h3>🧑‍🤝‍🧑 Recent Patients</h3>
+                        <div id="dashRecentPatients"><div class="empty">Loading…</div></div>
+                    </div>
+                    <div class="panel">
+                        <h3>🔔 Recent Notifications</h3>
+                        <div id="dashRecentNotifications"><div class="empty">Loading…</div></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══ APPOINTMENTS ═══ -->
+            <section class="view" id="view-appointments">
+                <div class="view-header">
+                    <div><h2>Appointments</h2><div class="sub">Manage requests and your upcoming schedule.</div></div>
+                </div>
+                <div class="toolbar">
+                    <div class="chip-group" id="apptRangeChips">
+                        <div class="chip active" data-range="today" onclick="setApptRange('today')">Today</div>
+                        <div class="chip" data-range="upcoming" onclick="setApptRange('upcoming')">Upcoming</div>
+                        <div class="chip" data-range="all" onclick="setApptRange('all')">All</div>
+                    </div>
+                    <select class="filter-select" id="apptStatusFilter" onchange="loadAppointments()">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="no_show">No-show</option>
+                    </select>
+                    <input type="date" id="apptDateInput" onchange="onApptDateChange()" />
+                </div>
+                <div class="data-card" id="apptList"><div class="loading-state">Loading…</div></div>
+            </section>
+
+            <!-- ═══ PATIENTS ═══ -->
+            <section class="view" id="view-patients">
+                <div class="view-header">
+                    <div><h2>My Patients</h2><div class="sub">Everyone who has booked with you.</div></div>
+                </div>
+                <div class="toolbar">
+                    <input type="text" id="patientSearchInput" placeholder="Search by name, email, or phone…" oninput="debouncedLoadPatients()" />
+                    <div class="chip-group" id="patientFilterChips">
+                        <div class="chip active" data-filter="" onclick="setPatientFilter('')">All Patients</div>
+                        <div class="chip" data-filter="new" onclick="setPatientFilter('new')">New Patients</div>
+                        <div class="chip" data-filter="returning" onclick="setPatientFilter('returning')">Returning</div>
+                        <div class="chip" data-filter="upcoming" onclick="setPatientFilter('upcoming')">Upcoming Appointment</div>
+                        <div class="chip" data-filter="recent" onclick="setPatientFilter('recent')">Recent Appointment</div>
+                    </div>
+                </div>
+                <div class="data-card" id="patientList"><div class="loading-state">Loading…</div></div>
+            </section>
+
+            <!-- ═══ PATIENT DETAIL ═══ -->
+            <section class="view" id="view-patient-detail">
+                <div class="back-link" onclick="switchView('patients')">← Back to My Patients</div>
+                <div id="patientDetailContent"><div class="loading-state">Loading…</div></div>
+            </section>
+
+            <!-- ═══ AVAILABILITY ═══ -->
+            <section class="view" id="view-availability">
+                <div class="view-header">
+                    <div><h2>Availability</h2><div class="sub">Set your weekly working hours. Patients can only book within these windows.</div></div>
+                </div>
+                <div class="panel" style="margin-bottom:0;">
+                    <div id="availabilityForm"><div class="loading-state">Loading…</div></div>
+                    <div class="save-bar">
+                        <span class="save-status hidden" id="availSaveStatus">✅ Saved</span>
+                        <button class="btn btn-primary" onclick="saveAvailability()">Save Availability</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══ DIET PLANS ═══ -->
+            <section class="view" id="view-diet-plans">
+                <div class="view-header">
+                    <div><h2>Diet Plans</h2><div class="sub">AI-generated diet plans your patients have created. Read-only.</div></div>
+                </div>
+                <div class="disclaimer-line">⚕️ These plans are generated by the patient-facing AI Diet Generator. They are informational, not a medical prescription.</div>
+                <div id="dietPlansList"><div class="loading-state">Loading…</div></div>
+            </section>
+
+            <!-- ═══ HEALTH QUERIES ═══ -->
+            <section class="view" id="view-health-queries">
+                <div class="view-header">
+                    <div><h2>Health Queries</h2><div class="sub">Questions your patients have asked the AI health assistant.</div></div>
+                </div>
+                <div class="disclaimer-line">⚕️ AI-generated answers are general information, not a diagnosis. Use clinical judgment.</div>
+                <div id="healthQueriesList"><div class="loading-state">Loading…</div></div>
+            </section>
+
+            <!-- ═══ NOTIFICATIONS ═══ -->
+            <section class="view" id="view-notifications">
+                <div class="view-header">
+                    <div><h2>Notifications</h2><div class="sub">Everything that's happened across your appointments.</div></div>
+                    <button class="btn btn-secondary" onclick="markAllNotificationsRead()">Mark all as read</button>
+                </div>
+                <div class="data-card" id="notifFullList"><div class="loading-state">Loading…</div></div>
+            </section>
+
+            <!-- ═══ PROFILE ═══ -->
+            <section class="view" id="view-profile">
+                <div class="view-header">
+                    <div><h2>My Profile</h2><div class="sub">This is what patients see when they search for you.</div></div>
+                </div>
+                <div class="panel" style="margin-bottom:0;">
+                    <div class="form-grid">
+                        <div class="form-field"><label>Name</label><input type="text" id="p_name" disabled /></div>
+                        <div class="form-field"><label>Specialization</label><input type="text" id="p_specialty" disabled /></div>
+                        <div class="form-field"><label>Email</label><input type="text" id="p_email" disabled /></div>
+                        <div class="form-field"><label>Phone</label><input type="text" id="p_phone" /></div>
+                        <div class="form-field"><label>Years of Experience</label><input type="number" id="p_experience" min="0" /></div>
+                        <div class="form-field"><label>Consultation Fee</label><input type="number" id="p_fee" min="0" step="0.01" /></div>
+                        <div class="form-field"><label>Hospital / Clinic</label><input type="text" id="p_hospital" /></div>
+                        <div class="form-field"><label>Profile Photo URL</label><input type="text" id="p_image" placeholder="https://…" /></div>
+                        <div class="form-field full"><label>Qualifications (comma-separated)</label><input type="text" id="p_qualifications" placeholder="MBBS, MD Dermatology" /></div>
+                        <div class="form-field full"><label>Bio</label><textarea id="p_bio" rows="3"></textarea></div>
+                    </div>
+                    <div class="save-bar">
+                        <span class="save-status hidden" id="profileSaveStatus">✅ Saved</span>
+                        <button class="btn btn-primary" onclick="saveProfile()">Save Profile</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══ SETTINGS ═══ -->
+            <section class="view" id="view-settings">
+                <div class="view-header"><div><h2>Settings</h2><div class="sub">Account &amp; session.</div></div></div>
+                <div class="panel" style="margin-bottom:0;">
+                    <div class="info-grid">
+                        <div class="item"><div class="k">Signed in as</div><div class="v" id="settingsEmailish">–</div></div>
+                        <div class="item"><div class="k">Role</div><div class="v">Doctor</div></div>
+                        <div class="item"><div class="k">Doctor ID</div><div class="v" id="settingsDoctorId">–</div></div>
+                    </div>
+                    <div class="save-bar">
+                        <button class="btn btn-cancel" onclick="doDoctorLogout()">🚪 Log Out</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<!-- ══════════════════════ RESCHEDULE MODAL ══════════════════════ -->
+<div class="modal-overlay" id="rescheduleModal">
+    <div class="modal-card">
+        <div class="modal-header"><h3>🔁 Reschedule Appointment</h3><button class="modal-close" onclick="closeModal('rescheduleModal')">✕</button></div>
+        <div class="modal-body">
+            <div class="form-field"><label>New Date</label><input type="date" id="rescheduleDate" /></div>
+            <div class="form-field"><label>New Time</label><input type="time" id="rescheduleTime" step="1200" /></div>
+            <div class="login-status" id="rescheduleStatus"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('rescheduleModal')">Cancel</button>
+            <button class="btn btn-primary" id="rescheduleSubmitBtn" onclick="submitReschedule()">Confirm New Time</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const API_BASE = '';
+let session = { token: null, doctor: null, role: null };
+let dashboardData = null;
+let apptRange = 'today';
+let patientFilter = '';
+let patientSearchDebounce = null;
+let currentPatientId = null;
+let rescheduleTarget = null; // confirmation_number being rescheduled
+let notifPollTimer = null;
+
+// ── Session ─────────────────────────────────────────────────────────────
+function loadSession() {
+    try {
+        const raw = localStorage.getItem('healthcare_session');
+        if (raw) session = JSON.parse(raw);
+    } catch (e) { session = { token: null, doctor: null, role: null }; }
+}
+function saveSession() { localStorage.setItem('healthcare_session', JSON.stringify(session)); }
+function clearSession() {
+    session = { token: null, doctor: null, role: null };
+    localStorage.removeItem('healthcare_session');
+}
+function authFetch(url, opts = {}) {
+    opts.headers = opts.headers || {};
+    if (session.token) opts.headers['Authorization'] = `Bearer ${session.token}`;
+    return fetch(url, opts);
+}
+async function handleAuthFailure(res) {
+    if (res.status === 401) {
+        clearSession();
+        showLogin('Your session expired. Please sign in again.');
+        return true;
+    }
+    return false;
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────
+async function init() {
+    loadSession();
+    if (!session.token || session.role !== 'doctor') { showLogin(); return; }
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/me`);
+        if (!res.ok) { showLogin('Your session expired. Please sign in again.'); return; }
+        const data = await res.json();
+        session.doctor = data.doctor;
+        saveSession();
+        await loadFullProfileIntoShell();
+        showApp();
+    } catch (e) {
+        showApp(); // network hiccup — keep cached session, still try to render
+    }
+}
+init();
+
+function showLogin(message) {
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('app').classList.add('hidden');
+    const statusEl = document.getElementById('loginStatus');
+    statusEl.textContent = message || '';
+    statusEl.className = message ? 'login-status error' : 'login-status';
+    if (notifPollTimer) { clearInterval(notifPollTimer); notifPollTimer = null; }
+}
+
+function showApp() {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    renderShellIdentity();
+    switchView('dashboard');
+    refreshUnreadCount();
+    notifPollTimer = setInterval(refreshUnreadCount, 30000);
+}
+
+async function submitLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const statusEl = document.getElementById('loginStatus');
+    const btn = document.getElementById('loginSubmitBtn');
+    if (!email || !password) { statusEl.textContent = 'Email and password are required.'; statusEl.className = 'login-status error'; return; }
+    btn.disabled = true; statusEl.textContent = ''; statusEl.className = 'login-status';
+    try {
+        const res = await fetch(`${API_BASE}/api/doctor/login`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) { statusEl.textContent = data.detail || 'Sign in failed.'; statusEl.className = 'login-status error'; return; }
+        session = { token: data.access_token, doctor: data.doctor, role: 'doctor' };
+        saveSession();
+        await loadFullProfileIntoShell();
+        showApp();
+    } catch (err) {
+        statusEl.textContent = `Network error: ${err.message}`; statusEl.className = 'login-status error';
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function doDoctorLogout() {
+    clearSession();
+    showLogin();
+}
+
+async function loadFullProfileIntoShell() {
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/profile`);
+        if (res.ok) {
+            const data = await res.json();
+            session.doctorProfile = data.doctor;
+            saveSession();
+        }
+    } catch (e) { /* non-critical */ }
+}
+
+function renderShellIdentity() {
+    const doc = session.doctor || {};
+    const full = session.doctorProfile || {};
+    document.getElementById('topDoctorName').textContent = doc.name || 'Doctor';
+    document.getElementById('topDoctorSpecialty').textContent = titleCase(doc.specialty || '');
+    document.getElementById('dashGreeting').textContent = `Welcome back, ${(doc.name || 'Doctor').replace(/^Dr\.?\s*/i,'Dr. ')} 👋`;
+    document.getElementById('settingsEmailish').textContent = full.email || '—';
+    document.getElementById('settingsDoctorId').textContent = doc.id || '—';
+
+    const imgEl = document.getElementById('topAvatarImg');
+    const fallbackEl = document.getElementById('topAvatarFallback');
+    if (full.image_url) {
+        imgEl.src = full.image_url; imgEl.classList.remove('hidden'); fallbackEl.classList.add('hidden');
+    } else {
+        imgEl.classList.add('hidden'); fallbackEl.classList.remove('hidden');
+        fallbackEl.textContent = (doc.name || 'D').replace(/^Dr\.?\s*/i, '').trim().charAt(0).toUpperCase() || 'D';
+    }
+}
+
+// ── Sidebar / nav ─────────────────────────────────────────────────────────
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('show');
+}
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+}
+
+const VIEW_LOADERS = {
+    dashboard: loadDashboard,
+    appointments: loadAppointments,
+    patients: loadPatients,
+    availability: loadAvailability,
+    'diet-plans': loadDietPlans,
+    'health-queries': loadHealthQueries,
+    notifications: loadNotificationsFull,
+    profile: loadProfileForm,
+};
+
+function switchView(name, opts) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    const target = document.getElementById(`view-${name}`);
+    if (target) target.classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.nav === name));
+    closeSidebar();
+    document.getElementById('notifDropdown').classList.add('hidden');
+    document.getElementById('profileMenu').classList.add('hidden');
+    if (VIEW_LOADERS[name]) VIEW_LOADERS[name](opts);
+}
+
+function topSearchSubmit() {
+    const q = document.getElementById('topSearchInput').value.trim();
+    document.getElementById('patientSearchInput').value = q;
+    switchView('patients');
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────
+function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+function titleCase(s) {
+    return String(s || '').replace(/[-_]/g, ' ').replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.substr(1).toLowerCase());
+}
+function formatTimeLabel(timeStr) {
+    if (!timeStr) return '';
+    const [h, m] = timeStr.split(':').map(Number);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${String(m).padStart(2,'0')} ${period}`;
+}
+function formatDateLabel(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function timeAgo(iso) {
+    if (!iso) return '';
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const mins = Math.round(diffMs / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.round(hrs / 24)}d ago`;
+}
+function initials(name) {
+    return String(name || '?').trim().split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase();
+}
+function statusBadge(status) {
+    return `<span class="badge ${escapeHtml(status)}">${escapeHtml(String(status || '').replace('_',' '))}</span>`;
+}
+function todayISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ── Dashboard ─────────────────────────────────────────────────────────────
+async function loadDashboard() {
+    const ids = ['dashTodaySchedule','dashUpcomingWeek','dashRecentPatients','dashRecentNotifications'];
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/dashboard/summary`);
+        if (await handleAuthFailure(res)) return;
+        const data = await res.json();
+        dashboardData = data;
+
+        document.getElementById('statTotalPatients').textContent = data.total_patients ?? 0;
+        document.getElementById('statToday').textContent = data.today_count ?? 0;
+        document.getElementById('statUpcoming').textContent = data.upcoming_count ?? 0;
+        document.getElementById('statCompleted').textContent = data.completed_count ?? 0;
+        document.getElementById('statPending').textContent = data.pending_count ?? 0;
+        updateNavBadge('navPendingBadge', data.pending_count);
+        updateNavBadge('navUnreadBadge', data.unread_notifications);
+        updateBellCount(data.unread_notifications);
+
+        renderList('dashTodaySchedule', data.todays_schedule, a => `
+            <div class="row-item" onclick="openPatientDetail('${escapeHtml(a.patient_id)}')">
+                <div class="row-avatar">${escapeHtml(initials(a.patient_name))}</div>
+                <div class="row-body">
+                    <div class="row-title">${escapeHtml(a.patient_name)}</div>
+                    <div class="row-sub">${formatTimeLabel(a.appointment_time)} · ${escapeHtml(a.reason || 'General checkup')}</div>
+                </div>
+                ${statusBadge(a.status)}
+            </div>`, 'No appointments scheduled for today.');
+
+        renderList('dashUpcomingWeek', data.upcoming_this_week, a => `
+            <div class="row-item" onclick="openPatientDetail('${escapeHtml(a.patient_id)}')">
+                <div class="row-avatar">${escapeHtml(initials(a.patient_name))}</div>
+                <div class="row-body">
+                    <div class="row-title">${escapeHtml(a.patient_name)}</div>
+                    <div class="row-sub">${formatDateLabel(a.appointment_date)} at ${formatTimeLabel(a.appointment_time)}</div>
+                </div>
+                ${statusBadge(a.status)}
+            </div>`, 'Nothing scheduled in the next 7 days.');
+
+        renderList('dashRecentPatients', data.recent_patients, a => `
+            <div class="row-item" onclick="openPatientDetail('${escapeHtml(a.patient_id)}')">
+                <div class="row-avatar">${escapeHtml(initials(a.patient_name))}</div>
+                <div class="row-body">
+                    <div class="row-title">${escapeHtml(a.patient_name)}</div>
+                    <div class="row-sub">Booked ${timeAgo(a.booked_at)}</div>
+                </div>
+                ${statusBadge(a.status)}
+            </div>`, 'No recent patient activity.');
+
+        renderList('dashRecentNotifications', data.recent_notifications, n => `
+            <div class="row-item" onclick="handleNotificationClick(${JSON.stringify(n).replace(/"/g,'&quot;')})">
+                <div class="row-avatar">🔔</div>
+                <div class="row-body">
+                    <div class="row-title">${escapeHtml(n.title)}</div>
+                    <div class="row-sub">${escapeHtml(n.message)}</div>
+                </div>
+            </div>`, 'No notifications yet.');
+    } catch (err) {
+        ids.forEach(id => document.getElementById(id).innerHTML = `<div class="empty">Failed to load: ${escapeHtml(err.message)}</div>`);
+    }
+}
+
+function renderList(elId, items, renderFn, emptyText) {
+    const el = document.getElementById(elId);
+    if (!items || !items.length) { el.innerHTML = `<div class="empty">${escapeHtml(emptyText)}</div>`; return; }
+    el.innerHTML = items.map(renderFn).join('');
+}
+
+function updateNavBadge(elId, count) {
+    const el = document.getElementById(elId);
+    if (count && count > 0) { el.textContent = count > 99 ? '99+' : count; el.classList.remove('hidden'); }
+    else { el.classList.add('hidden'); }
+}
+function updateBellCount(count) {
+    const el = document.getElementById('bellCount');
+    if (count && count > 0) { el.textContent = count > 99 ? '99+' : count; el.classList.remove('hidden'); }
+    else { el.classList.add('hidden'); }
+}
+
+// ── Appointments ──────────────────────────────────────────────────────────
+function setApptRange(range) {
+    apptRange = range;
+    document.querySelectorAll('#apptRangeChips .chip').forEach(c => c.classList.toggle('active', c.dataset.range === range));
+    document.getElementById('apptDateInput').value = '';
+    loadAppointments();
+}
+function onApptDateChange() {
+    const val = document.getElementById('apptDateInput').value;
+    if (val) {
+        apptRange = null;
+        document.querySelectorAll('#apptRangeChips .chip').forEach(c => c.classList.remove('active'));
+    }
+    loadAppointments();
+}
+
+async function loadAppointments() {
+    const listEl = document.getElementById('apptList');
+    listEl.innerHTML = `<div class="loading-state">Loading…</div>`;
+    const status = document.getElementById('apptStatusFilter').value;
+    const dateVal = document.getElementById('apptDateInput').value;
+
+    const params = new URLSearchParams();
+    if (status) params.set('status', status);
+    if (dateVal) params.set('date', dateVal);
+    else if (apptRange) params.set('range', apptRange);
+
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/appointments?${params.toString()}`);
+        if (await handleAuthFailure(res)) return;
+        if (!res.ok) { listEl.innerHTML = `<div class="empty-state">Failed to load appointments.</div>`; return; }
+        const data = await res.json();
+        const appts = data.appointments || [];
+        if (!appts.length) { listEl.innerHTML = `<div class="empty-state"><div class="icon">📭</div>No appointments match these filters.</div>`; return; }
+
+        listEl.innerHTML = appts.map(a => apptRowHtml(a)).join('');
+    } catch (err) {
+        listEl.innerHTML = `<div class="empty-state">Network error: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+function apptRowHtml(a) {
+    let actions = '';
+    if (a.status === 'pending') {
+        actions = `
+            <button class="btn btn-accept" onclick="updateApptStatus('${a.confirmation_number}','confirmed')">✅ Accept</button>
+            <button class="btn btn-reject" onclick="updateApptStatus('${a.confirmation_number}','rejected')">✖ Reject</button>
+            <button class="btn btn-secondary" onclick="openRescheduleModal('${a.confirmation_number}','${a.date}','${a.time.slice(0,5)}')">🔁 Reschedule</button>`;
+    } else if (a.status === 'confirmed') {
+        actions = `
+            <button class="btn btn-complete" onclick="updateApptStatus('${a.confirmation_number}','completed')">✅ Complete</button>
+            <button class="btn btn-secondary" onclick="openRescheduleModal('${a.confirmation_number}','${a.date}','${a.time.slice(0,5)}')">🔁 Reschedule</button>
+            <button class="btn btn-cancel" onclick="updateApptStatus('${a.confirmation_number}','cancelled')">✖ Cancel</button>`;
+    }
+    return `
+        <div class="appt-row" data-confirmation="${escapeHtml(a.confirmation_number)}">
+            <div class="row-avatar" style="cursor:pointer" onclick="openPatientDetail('${escapeHtml(a.patient_id)}')">${escapeHtml(initials(a.patient_name))}</div>
+            <div class="appt-main" style="cursor:pointer" onclick="openPatientDetail('${escapeHtml(a.patient_id)}')">
+                <div class="name">${escapeHtml(a.patient_name)} ${statusBadge(a.status)}</div>
+                <div class="meta">📅 ${formatDateLabel(a.date)} · 🕒 ${formatTimeLabel(a.time)} · 🎫 ${escapeHtml(a.confirmation_number)}${a.patient_phone ? ` · 📞 ${escapeHtml(a.patient_phone)}` : ''}</div>
+                ${a.reason ? `<div class="reason">"${escapeHtml(a.reason)}"</div>` : ''}
+            </div>
+            <div class="appt-actions">${actions}</div>
+        </div>`;
+}
+
+async function updateApptStatus(confirmationNumber, status) {
+    const row = document.querySelector(`.appt-row[data-confirmation="${confirmationNumber}"]`);
+    const buttons = row ? row.querySelectorAll('button') : [];
+    buttons.forEach(b => b.disabled = true);
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/appointments/${encodeURIComponent(confirmationNumber)}/status`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        });
+        if (await handleAuthFailure(res)) return;
+        if (!res.ok) { const err = await res.json().catch(()=>({})); alert(err.detail || 'Failed to update appointment.'); buttons.forEach(b=>b.disabled=false); return; }
+        loadAppointments();
+        refreshUnreadCount();
+    } catch (err) {
+        alert(`Network error: ${err.message}`);
+        buttons.forEach(b => b.disabled = false);
+    }
+}
+
+function openRescheduleModal(confirmationNumber, date, time) {
+    rescheduleTarget = confirmationNumber;
+    document.getElementById('rescheduleDate').value = date;
+    document.getElementById('rescheduleTime').value = time;
+    document.getElementById('rescheduleStatus').textContent = '';
+    document.getElementById('rescheduleModal').classList.add('open');
+}
+
+async function submitReschedule() {
+    const date = document.getElementById('rescheduleDate').value;
+    const time = document.getElementById('rescheduleTime').value;
+    const statusEl = document.getElementById('rescheduleStatus');
+    if (!date || !time) { statusEl.textContent = 'Please choose a date and time.'; statusEl.className = 'login-status error'; return; }
+    const btn = document.getElementById('rescheduleSubmitBtn');
+    btn.disabled = true;
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/appointments/${encodeURIComponent(rescheduleTarget)}/reschedule`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date, time: time.slice(0,5) })
+        });
+        const data = await res.json();
+        if (!res.ok) { statusEl.textContent = data.detail || 'Failed to reschedule.'; statusEl.className = 'login-status error'; btn.disabled = false; return; }
+        closeModal('rescheduleModal');
+        loadAppointments();
+    } catch (err) {
+        statusEl.textContent = `Network error: ${err.message}`; statusEl.className = 'login-status error';
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+// ── Patients ───────────────────────────────────────────────────────────
+function setPatientFilter(filter) {
+    patientFilter = filter;
+    document.querySelectorAll('#patientFilterChips .chip').forEach(c => c.classList.toggle('active', c.dataset.filter === filter));
+    loadPatients();
+}
+function debouncedLoadPatients() {
+    clearTimeout(patientSearchDebounce);
+    patientSearchDebounce = setTimeout(loadPatients, 300);
+}
+
+async function loadPatients() {
+    const listEl = document.getElementById('patientList');
+    listEl.innerHTML = `<div class="loading-state">Loading…</div>`;
+    const search = document.getElementById('patientSearchInput').value.trim();
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (patientFilter) params.set('filter', patientFilter);
+
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/patients?${params.toString()}`);
+        if (await handleAuthFailure(res)) return;
+        const data = await res.json();
+        const patients = data.patients || [];
+        if (!patients.length) { listEl.innerHTML = `<div class="empty-state"><div class="icon">🧑‍🤝‍🧑</div>No patients match this search/filter.</div>`; return; }
+        listEl.innerHTML = patients.map(p => `
+            <div class="patient-row" onclick="openPatientDetail('${escapeHtml(p.patient_id)}')" style="cursor:pointer;">
+                <div class="row-avatar">${escapeHtml(initials(p.name))}</div>
+                <div class="appt-main">
+                    <div class="name">${escapeHtml(p.name)} ${p.is_new ? '<span class="badge confirmed">new</span>' : ''}</div>
+                    <div class="meta">${p.email ? escapeHtml(p.email) : ''}${p.phone ? ` · 📞 ${escapeHtml(p.phone)}` : ''}</div>
+                    <div class="meta">📋 ${p.appointment_count} appointment(s)${p.last_appointment ? ` · Last: ${formatDateLabel(p.last_appointment)}` : ''}${p.next_appointment ? ` · Next: ${formatDateLabel(p.next_appointment)}` : ''}</div>
+                </div>
+                ${statusBadge(p.status)}
+            </div>`).join('');
+    } catch (err) {
+        listEl.innerHTML = `<div class="empty-state">Network error: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+async function openPatientDetail(patientId) {
+    if (!patientId) return;
+    currentPatientId = patientId;
+    switchView('patient-detail');
+    const el = document.getElementById('patientDetailContent');
+    el.innerHTML = `<div class="loading-state">Loading…</div>`;
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/patients/${encodeURIComponent(patientId)}`);
+        if (await handleAuthFailure(res)) return;
+        if (!res.ok) { el.innerHTML = `<div class="empty-state">This patient wasn't found among your patients.</div>`; return; }
+        const data = await res.json();
+        renderPatientDetail(data);
+    } catch (err) {
+        el.innerHTML = `<div class="empty-state">Network error: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+function renderPatientDetail(data) {
+    const p = data.patient || {};
+    const appts = data.appointments || [];
+    const notes = data.notes || [];
+    const dietPlans = data.diet_plans || [];
+    const queries = data.health_queries || [];
+    const name = p.full_name || p.email || 'Unknown patient';
+
+    const historyRows = appts.map(a => `
+        <tr>
+            <td>${formatDateLabel(a.appointment_date)}</td>
+            <td>${formatTimeLabel(a.appointment_time)}</td>
+            <td>${escapeHtml(a.reason || '—')}</td>
+            <td>${statusBadge(a.status)}</td>
+        </tr>`).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--text-faint);padding:20px;">No appointment history with you yet.</td></tr>`;
+
+    const notesHtml = notes.map(n => `
+        <div class="note-card">
+            <span class="source-tag doctor">Doctor-entered</span>
+            <div class="note-text" style="margin-top:8px;">${escapeHtml(n.note)}</div>
+            <div class="note-meta">${new Date(n.created_at).toLocaleString()}</div>
+        </div>`).join('') || `<div class="panel-empty" style="color:var(--text-faint);font-size:0.85em;">No notes yet — you're the only one who can see these.</div>`;
+
+    const dietHtml = dietPlans.map(d => `
+        <div class="diet-card">
+            <span class="source-tag ai">AI-generated</span>
+            <div style="margin-top:8px;font-weight:700;">${escapeHtml(titleCase(d.preferences || 'Diet plan'))} · ${escapeHtml(d.daily_calories || '—')} kcal/day</div>
+            ${d.allergies && d.allergies.length ? `<div class="meta" style="font-size:0.8em;color:var(--text-muted);margin-top:2px;">Avoiding: ${escapeHtml(d.allergies.join(', '))}</div>` : ''}
+            ${d.meals ? `<div class="meal-grid">${Object.entries(d.meals).map(([k,v]) => `<div class="meal"><div class="k">${escapeHtml(k)}</div><div class="v">${escapeHtml(v)}</div></div>`).join('')}</div>` : ''}
+            ${d.plan_text ? `<div class="plan-text">${escapeHtml(d.plan_text)}</div>` : ''}
+            <div class="note-meta" style="margin-top:8px;">${new Date(d.created_at).toLocaleString()}</div>
+        </div>`).join('') || `<div class="panel-empty" style="color:var(--text-faint);font-size:0.85em;">No diet plans generated by this patient yet.</div>`;
+
+    const queriesHtml = queries.map(q => `
+        <div class="qa-card">
+            <span class="source-tag patient">Patient-asked</span>
+            <div class="q" style="margin-top:8px;">"${escapeHtml(q.question)}"</div>
+            <div class="a">${escapeHtml(q.answer || 'No answer recorded.')}</div>
+            <div class="note-meta">${new Date(q.created_at).toLocaleString()} · <span class="source-tag ai" style="margin-left:2px;">AI-generated answer</span></div>
+        </div>`).join('') || `<div class="panel-empty" style="color:var(--text-faint);font-size:0.85em;">No health-assistant history for this patient yet.</div>`;
+
+    const allergies = (p.allergies && p.allergies.length) ? p.allergies.join(', ') : 'None on file';
+
+    document.getElementById('patientDetailContent').innerHTML = `
+        <div class="patient-header">
+            <div class="big-avatar">${escapeHtml(initials(name))}</div>
+            <div>
+                <h2>${escapeHtml(name)}</h2>
+                <div class="meta">${p.email ? escapeHtml(p.email) : ''}${p.phone ? ` · 📞 ${escapeHtml(p.phone)}` : ''}</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>🧑 Patient Information</h3>
+            <div class="info-grid">
+                <div class="item"><div class="k">Date of Birth</div><div class="v">${p.date_of_birth ? formatDateLabel(p.date_of_birth) : '—'}</div></div>
+                <div class="item"><div class="k">Phone</div><div class="v">${escapeHtml(p.phone || '—')}</div></div>
+                <div class="item"><div class="k">Email</div><div class="v">${escapeHtml(p.email || '—')}</div></div>
+                <div class="item"><div class="k">Allergies <span class="source-tag patient" style="margin-left:4px;">patient-provided</span></div><div class="v">${escapeHtml(allergies)}</div></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>📅 Appointment History (with you)</h3>
+            <div class="table-wrap"><table class="simple-table">
+                <thead><tr><th>Date</th><th>Time</th><th>Reason</th><th>Status</th></tr></thead>
+                <tbody>${historyRows}</tbody>
+            </table></div>
+        </div>
+
+        <div class="panel">
+            <h3>🥗 Diet Plans</h3>
+            ${dietHtml}
+        </div>
+
+        <div class="panel">
+            <h3>💬 Health Query History</h3>
+            ${queriesHtml}
+        </div>
+
+        <div class="panel">
+            <h3>📝 Doctor Notes <span style="font-weight:400;color:var(--text-muted);font-size:0.8em;">— private, visible only to you</span></h3>
+            ${notesHtml}
+            <div class="note-form">
+                <textarea id="newNoteText" placeholder="Add a private note about this patient…"></textarea>
+                <button class="btn btn-primary" onclick="submitPatientNote()">Add Note</button>
+            </div>
+        </div>
+    `;
+}
+
+async function submitPatientNote() {
+    const textEl = document.getElementById('newNoteText');
+    const note = textEl.value.trim();
+    if (!note || !currentPatientId) return;
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/patients/${encodeURIComponent(currentPatientId)}/notes`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ note })
+        });
+        if (await handleAuthFailure(res)) return;
+        if (!res.ok) { alert('Failed to add note.'); return; }
+        textEl.value = '';
+        openPatientDetail(currentPatientId);
+    } catch (err) {
+        alert(`Network error: ${err.message}`);
+    }
+}
+
+// ── Availability ─────────────────────────────────────────────────────────
+const DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+async function loadAvailability() {
+    const el = document.getElementById('availabilityForm');
+    el.innerHTML = `<div class="loading-state">Loading…</div>`;
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/availability`);
+        if (await handleAuthFailure(res)) return;
+        const data = await res.json();
+        const byDay = {};
+        (data.availability || []).forEach(s => { byDay[s.day_of_week] = s; });
+
+        el.innerHTML = DAY_NAMES.map((name, idx) => {
+            const s = byDay[idx] || { start_time: '09:00', end_time: '17:00', is_available: false };
+            const checked = s.is_available ? 'checked' : '';
+            return `
+            <div class="avail-day" data-day="${idx}">
+                <div class="day-name">${name}</div>
+                <label class="toggle-switch">
+                    <input type="checkbox" ${checked} onchange="toggleAvailDay(${idx}, this.checked)" />
+                    <span class="toggle-slider"></span>
+                </label>
+                <input type="time" class="avail-start" value="${(s.start_time||'09:00').slice(0,5)}" ${s.is_available ? '' : 'disabled'} />
+                <span>to</span>
+                <input type="time" class="avail-end" value="${(s.end_time||'17:00').slice(0,5)}" ${s.is_available ? '' : 'disabled'} />
+                <span class="unavailable-label ${s.is_available ? 'hidden' : ''}">Unavailable</span>
+            </div>`;
+        }).join('');
+    } catch (err) {
+        el.innerHTML = `<div class="empty-state">Network error: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+function toggleAvailDay(dayIdx, isAvailable) {
+    const row = document.querySelector(`.avail-day[data-day="${dayIdx}"]`);
+    row.querySelectorAll('input[type="time"]').forEach(i => i.disabled = !isAvailable);
+    row.querySelector('.unavailable-label').classList.toggle('hidden', isAvailable);
+}
+
+async function saveAvailability() {
+    const rows = Array.from(document.querySelectorAll('.avail-day')).map(row => ({
+        day_of_week: Number(row.dataset.day),
+        start_time: row.querySelector('.avail-start').value,
+        end_time: row.querySelector('.avail-end').value,
+        is_available: row.querySelector('input[type="checkbox"]').checked,
+    }));
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/availability`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ schedules: rows })
+        });
+        if (await handleAuthFailure(res)) return;
+        const data = await res.json();
+        if (!res.ok) { alert(data.detail || 'Failed to save availability.'); return; }
+        const statusEl = document.getElementById('availSaveStatus');
+        statusEl.classList.remove('hidden');
+        setTimeout(() => statusEl.classList.add('hidden'), 2500);
+    } catch (err) {
+        alert(`Network error: ${err.message}`);
+    }
+}
+
+// ── Diet Plans / Health Queries (aggregate views) ───────────────────────
+async function loadDietPlans() {
+    const el = document.getElementById('dietPlansList');
+    el.innerHTML = `<div class="loading-state">Loading…</div>`;
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/diet-plans`);
+        if (await handleAuthFailure(res)) return;
+        const data = await res.json();
+        const plans = data.diet_plans || [];
+        if (!plans.length) { el.innerHTML = `<div class="empty-state"><div class="icon">🥗</div>No diet plans generated by your patients yet.</div>`; return; }
+        el.innerHTML = plans.map(d => `
+            <div class="diet-card" style="cursor:pointer;" onclick="openPatientDetail('${escapeHtml(d.patient_id)}')">
+                <span class="source-tag ai">AI-generated</span>
+                <div style="margin-top:8px;font-weight:700;">${escapeHtml(d.patient_name)} — ${escapeHtml(titleCase(d.preferences || 'Diet plan'))} · ${escapeHtml(d.daily_calories || '—')} kcal/day</div>
+                <div class="note-meta" style="margin-top:6px;">${new Date(d.created_at).toLocaleString()}</div>
+            </div>`).join('');
+    } catch (err) {
+        el.innerHTML = `<div class="empty-state">Network error: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+async function loadHealthQueries() {
+    const el = document.getElementById('healthQueriesList');
+    el.innerHTML = `<div class="loading-state">Loading…</div>`;
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/health-queries`);
+        if (await handleAuthFailure(res)) return;
+        const data = await res.json();
+        const queries = data.health_queries || [];
+        if (!queries.length) { el.innerHTML = `<div class="empty-state"><div class="icon">💬</div>No health-assistant questions from your patients yet.</div>`; return; }
+        el.innerHTML = queries.map(q => `
+            <div class="qa-card" style="cursor:pointer;" onclick="openPatientDetail('${escapeHtml(q.patient_id)}')">
+                <span class="source-tag patient">Patient-asked</span> · <strong>${escapeHtml(q.patient_name)}</strong>
+                <div class="q" style="margin-top:8px;">"${escapeHtml(q.question)}"</div>
+                <div class="a">${escapeHtml(q.answer || 'No answer recorded.')}</div>
+                <div class="note-meta">${new Date(q.created_at).toLocaleString()} · <span class="source-tag ai" style="margin-left:2px;">AI-generated answer</span></div>
+            </div>`).join('');
+    } catch (err) {
+        el.innerHTML = `<div class="empty-state">Network error: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────
+async function refreshUnreadCount() {
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/notifications/unread-count`);
+        if (!res.ok) return;
+        const data = await res.json();
+        updateBellCount(data.unread_count);
+        updateNavBadge('navUnreadBadge', data.unread_count);
+    } catch (e) { /* non-critical */ }
+}
+
+async function toggleNotifDropdown() {
+    const dropdown = document.getElementById('notifDropdown');
+    const willOpen = dropdown.classList.contains('hidden');
+    document.getElementById('profileMenu').classList.add('hidden');
+    dropdown.classList.toggle('hidden');
+    if (!willOpen) return;
+    const listEl = document.getElementById('notifDropdownList');
+    listEl.innerHTML = `<div class="notif-empty">Loading…</div>`;
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/notifications`);
+        if (await handleAuthFailure(res)) return;
+        const data = await res.json();
+        const items = (data.notifications || []).slice(0, 8);
+        if (!items.length) { listEl.innerHTML = `<div class="notif-empty">You're all caught up 🎉</div>`; return; }
+        listEl.innerHTML = items.map(n => notifItemHtml(n)).join('');
+        updateBellCount(data.unread_count);
+        updateNavBadge('navUnreadBadge', data.unread_count);
+    } catch (err) {
+        listEl.innerHTML = `<div class="notif-empty">Network error</div>`;
+    }
+}
+
+function notifItemHtml(n) {
+    return `
+        <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick='handleNotificationClick(${JSON.stringify(n)})'>
+            <div class="dot ${n.is_read ? 'read' : ''}"></div>
+            <div class="body">
+                <div class="title">${escapeHtml(n.title)}</div>
+                <div class="msg">${escapeHtml(n.message)}</div>
+                <div class="time">${timeAgo(n.created_at)}</div>
+            </div>
+        </div>`;
+}
+
+async function handleNotificationClick(n) {
+    document.getElementById('notifDropdown').classList.add('hidden');
+    if (!n.is_read) {
+        try { await authFetch(`${API_BASE}/api/doctor/notifications/${encodeURIComponent(n.id)}/read`, { method: 'POST' }); } catch (e) {}
+        refreshUnreadCount();
+    }
+    if (n.appointment && n.appointment.patient_id) {
+        openPatientDetail(n.appointment.patient_id);
+    } else {
+        switchView('notifications');
+    }
+}
+
+async function markAllNotificationsRead() {
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/notifications/read-all`, { method: 'POST' });
+        if (await handleAuthFailure(res)) return;
+        refreshUnreadCount();
+        if (!document.getElementById('notifDropdown').classList.contains('hidden')) toggleNotifDropdown().then(() => toggleNotifDropdown());
+        if (document.getElementById('view-notifications').classList.contains('active')) loadNotificationsFull();
+    } catch (err) { /* non-critical */ }
+}
+
+async function loadNotificationsFull() {
+    const el = document.getElementById('notifFullList');
+    el.innerHTML = `<div class="loading-state">Loading…</div>`;
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/notifications`);
+        if (await handleAuthFailure(res)) return;
+        const data = await res.json();
+        const items = data.notifications || [];
+        if (!items.length) { el.innerHTML = `<div class="empty-state"><div class="icon">🔔</div>No notifications yet.</div>`; return; }
+        el.innerHTML = items.map(n => `
+            <div class="appt-row" style="cursor:pointer;" onclick='handleNotificationClick(${JSON.stringify(n)})'>
+                <div class="row-avatar">${n.is_read ? '🔔' : '🔴'}</div>
+                <div class="appt-main">
+                    <div class="name">${escapeHtml(n.title)}</div>
+                    <div class="meta">${escapeHtml(n.message)}</div>
+                    <div class="meta">${new Date(n.created_at).toLocaleString()}</div>
+                </div>
+            </div>`).join('');
+    } catch (err) {
+        el.innerHTML = `<div class="empty-state">Network error: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+function toggleProfileMenu() {
+    document.getElementById('notifDropdown').classList.add('hidden');
+    document.getElementById('profileMenu').classList.toggle('hidden');
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.bell-wrap')) document.getElementById('notifDropdown').classList.add('hidden');
+    if (!e.target.closest('.profile-chip')) document.getElementById('profileMenu').classList.add('hidden');
+});
+
+// ── Profile ────────────────────────────────────────────────────────────
+async function loadProfileForm() {
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/profile`);
+        if (await handleAuthFailure(res)) return;
+        const data = await res.json();
+        const d = data.doctor || {};
+        session.doctorProfile = d;
+        saveSession();
+        renderShellIdentity();
+
+        document.getElementById('p_name').value = d.name || '';
+        document.getElementById('p_specialty').value = titleCase(d.specialty || '');
+        document.getElementById('p_email').value = d.email || '';
+        document.getElementById('p_phone').value = d.phone || '';
+        document.getElementById('p_experience').value = d.years_experience ?? '';
+        document.getElementById('p_fee').value = d.consultation_fee ?? '';
+        document.getElementById('p_hospital').value = d.hospital || '';
+        document.getElementById('p_image').value = d.image_url || '';
+        document.getElementById('p_qualifications').value = (d.qualifications || []).join(', ');
+        document.getElementById('p_bio').value = d.bio || '';
+    } catch (err) {
+        alert(`Failed to load profile: ${err.message}`);
+    }
+}
+
+async function saveProfile() {
+    const payload = {
+        phone: document.getElementById('p_phone').value.trim() || null,
+        bio: document.getElementById('p_bio').value.trim() || null,
+        qualifications: document.getElementById('p_qualifications').value.split(',').map(s => s.trim()).filter(Boolean),
+        years_experience: document.getElementById('p_experience').value ? Number(document.getElementById('p_experience').value) : null,
+        image_url: document.getElementById('p_image').value.trim() || null,
+        hospital: document.getElementById('p_hospital').value.trim() || null,
+        consultation_fee: document.getElementById('p_fee').value ? Number(document.getElementById('p_fee').value) : null,
+    };
+    try {
+        const res = await authFetch(`${API_BASE}/api/doctor/profile`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (await handleAuthFailure(res)) return;
+        const data = await res.json();
+        if (!res.ok) { alert(data.detail || 'Failed to save profile.'); return; }
+        session.doctorProfile = data.doctor;
+        saveSession();
+        renderShellIdentity();
+        const statusEl = document.getElementById('profileSaveStatus');
+        statusEl.classList.remove('hidden');
+        setTimeout(() => statusEl.classList.add('hidden'), 2500);
+    } catch (err) {
+        alert(`Network error: ${err.message}`);
+    }
+}
+
+// Default the appointments date filter's picker to today without forcing the
+// range filter away from the "Today" chip.
+document.addEventListener('DOMContentLoaded', () => {
+    const apptDate = document.getElementById('apptDateInput');
+    if (apptDate) apptDate.setAttribute('placeholder', todayISO());
+});
+</script>
+</body>
+</html>

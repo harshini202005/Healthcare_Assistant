@@ -1,0 +1,2258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthcare Assistant</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 95vh;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .header h1 { font-size: 1.8em; margin-bottom: 4px; }
+        .header p  { opacity: 0.9; font-size: 0.9em; }
+
+        /* ── Auth bar ── */
+        .auth-bar { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+        .auth-bar-inner { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+        .auth-link-btn {
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.4);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 14px;
+            font-size: 0.78em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .auth-link-btn:hover { background: rgba(255,255,255,0.32); }
+        .auth-user-chip {
+            font-size: 0.8em;
+            font-weight: 600;
+            opacity: 0.95;
+            padding: 5px 4px;
+        }
+
+        /* ── Tool Toolbar ── */
+        .tool-toolbar {
+            display: flex;
+            gap: 10px;
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            flex-shrink: 0;
+        }
+        .tool-toolbar span {
+            font-size: 0.82em;
+            color: #6c757d;
+            align-self: center;
+            white-space: nowrap;
+        }
+        .tool-btn {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 18px;
+            border: 2px solid transparent;
+            border-radius: 20px;
+            font-size: 0.88em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tool-btn.booking {
+            background: #e8f5e9;
+            border-color: #43a047;
+            color: #2e7d32;
+        }
+        .tool-btn.booking:hover {
+            background: #43a047;
+            color: white;
+        }
+        .tool-btn.diet {
+            background: #fff3e0;
+            border-color: #fb8c00;
+            color: #e65100;
+        }
+        .tool-btn.diet:hover {
+            background: #fb8c00;
+            color: white;
+        }
+
+        /* ── Chat area ── */
+        .main-content {
+            padding: 16px 24px 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* ── Messages ── */
+        .message {
+            max-width: 78%;
+            padding: 11px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            animation: slideIn 0.25s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .message.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .message.assistant {
+            align-self: flex-start;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-bottom-left-radius: 4px;
+        }
+        .message.system {
+            align-self: center;
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            color: #0d47a1;
+            font-size: 0.85em;
+            max-width: 88%;
+            text-align: center;
+            border-radius: 8px;
+        }
+        .message-content { white-space: pre-wrap; line-height: 1.55; }
+        .message-time { font-size: 0.73em; opacity: 0.65; margin-top: 4px; }
+
+        /* ── Input row ── */
+        .input-area { display: flex; gap: 10px; align-items: flex-end; position: relative; }
+        .input-wrapper { flex: 1; position: relative; }
+        #userInput {
+            width: 100%;
+            padding: 13px 18px;
+            border: 2px solid #dee2e6;
+            border-radius: 24px;
+            font-size: 1em;
+            font-family: inherit;
+            resize: none;
+            max-height: 110px;
+            overflow-y: auto;
+            transition: border-color 0.25s;
+        }
+        #userInput:focus { outline: none; border-color: #667eea; }
+        .send-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 13px 24px;
+            font-size: 1em;
+            font-weight: 600;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: all 0.25s;
+            white-space: nowrap;
+        }
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(102,126,234,0.4);
+        }
+        .send-btn:disabled { background: #adb5bd; cursor: not-allowed; transform: none; }
+        
+        /* ── Tools Menu Button ── */
+        .tools-menu-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s;
+        }
+        .tools-menu-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+        
+        .tools-dropdown {
+            display: none;
+            position: absolute;
+            bottom: 60px;
+            right: 0;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+            padding: 12px;
+            min-width: 240px;
+            z-index: 100;
+            animation: slideUp 0.2s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tools-dropdown.show { display: block; }
+        
+        .tools-dropdown-title {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #667eea;
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 8px;
+        }
+        
+        .tool-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.92em;
+            color: #333;
+        }
+        .tool-option:hover { background: #f5f5f5; }
+        .tool-option-icon { font-size: 1.2em; }
+        .tool-option-text { font-weight: 500; }
+
+        /* ── Welcome ── */
+        .welcome-message { text-align: center; padding: 32px 20px; color: #6c757d; }
+        .welcome-message h2 { margin-bottom: 12px; color: #495057; }
+        .welcome-icon { font-size: 2.8em; margin-bottom: 12px; }
+        .examples { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+        .example-chip {
+            background: white;
+            border: 1px solid #dee2e6;
+            padding: 7px 14px;
+            border-radius: 18px;
+            font-size: 0.83em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .example-chip:hover { background: #667eea; color: white; border-color: #667eea; }
+
+        /* ── Typing ── */
+        .typing-indicator { display: flex; gap: 4px; padding: 10px 14px; }
+        .typing-dot { width: 7px; height: 7px; background: #667eea; border-radius: 50%; animation: typingBounce 1.4s infinite; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typingBounce {
+            0%,60%,100% { transform: translateY(0); }
+            30%          { transform: translateY(-9px); }
+        }
+
+        /* ── Modal overlay ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal-card {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.3);
+            animation: modalIn 0.25s ease;
+            overflow: hidden;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.94) translateY(16px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-header h2 { font-size: 1.15em; color: #212529; display: flex; align-items: center; gap: 8px; }
+        .modal-close {
+            width: 30px; height: 30px;
+            border: none;
+            background: #f1f3f5;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.1em;
+            color: #6c757d;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s;
+        }
+        .modal-close:hover { background: #dee2e6; }
+
+        .modal-body { padding: 20px 24px; }
+
+        /* ── Form styles ── */
+        .form-row { margin-bottom: 16px; }
+        .form-row label {
+            display: block;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 6px;
+        }
+        .form-row label .required { color: #dc3545; margin-left: 3px; }
+        .form-row label .optional {
+            font-weight: 400;
+            color: #adb5bd;
+            font-size: 0.9em;
+            margin-left: 4px;
+        }
+        .form-row input,
+        .form-row select,
+        .form-row textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-family: inherit;
+            color: #212529;
+            background: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-row input:focus,
+        .form-row select:focus,
+        .form-row textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
+        }
+        .form-row textarea { resize: vertical; min-height: 72px; }
+        .form-row select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236c757d' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+        .form-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        .form-hint { font-size: 0.78em; color: #868e96; margin-top: 4px; }
+
+        .booking-as-chip {
+            padding: 10px 14px;
+            background: #f1f3f5;
+            border: 1.5px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #495057;
+        }
+        .booking-as-chip.signed-in { background: #e8f5e9; border-color: #a5d6a7; color: #2e7d32; }
+
+        /* ── Auth modal ── */
+        .auth-tabs { display: flex; gap: 6px; margin-bottom: 18px; background: #f1f3f5; border-radius: 10px; padding: 4px; }
+        .auth-tab {
+            flex: 1;
+            padding: 9px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9em;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .auth-tab.active { background: white; color: #667eea; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+        .auth-status { margin-top: 12px; font-size: 0.87em; min-height: 1.2em; }
+        .auth-status.error { color: #dc3545; }
+        .auth-status.success { color: #2e7d32; }
+
+        /* ── Auth gate (full-screen, shown before the app) ── */
+        .auth-gate {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .auth-gate-card {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 36px 32px 30px;
+            animation: modalIn 0.3s ease;
+        }
+        .auth-gate-brand { text-align: center; margin-bottom: 26px; }
+        .auth-gate-icon { font-size: 2.6em; margin-bottom: 8px; }
+        .auth-gate-brand h1 { font-size: 1.4em; color: #212529; margin-bottom: 6px; }
+        .auth-gate-brand p { font-size: 0.88em; color: #868e96; }
+        .auth-gate-submit { width: 100%; margin-top: 6px; }
+
+        /* ── Dashboard ── */
+        .dashboard-greeting { text-align: center; }
+        .dashboard-stats { display: flex; justify-content: center; gap: 16px; margin: 18px 0; }
+        .dashboard-stat {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 14px;
+            padding: 14px 30px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .dashboard-stat-value { font-size: 1.7em; font-weight: 800; color: #667eea; }
+        .dashboard-stat-label { font-size: 0.78em; color: #868e96; margin-top: 2px; font-weight: 600; }
+        .dashboard-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+        .dashboard-card {
+            background: white;
+            border: 1.5px solid #e9ecef;
+            border-radius: 14px;
+            padding: 18px 22px;
+            text-align: center;
+            cursor: pointer;
+            min-width: 130px;
+            transition: all 0.2s;
+        }
+        .dashboard-card:hover { border-color: #667eea; transform: translateY(-3px); box-shadow: 0 8px 20px rgba(102,126,234,0.18); }
+        .dashboard-card-icon { font-size: 1.8em; margin-bottom: 6px; }
+        .dashboard-card-label { font-weight: 700; font-size: 0.88em; color: #495057; }
+
+        /* ── Appointment cards ── */
+        .appt-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .appt-card-info { flex: 1; }
+        .appt-card-top { font-weight: 700; color: #212529; margin-bottom: 3px; }
+        .appt-card-sub { font-size: 0.85em; color: #6c757d; }
+        .appt-status {
+            display: inline-block;
+            font-size: 0.72em;
+            font-weight: 700;
+            padding: 2px 9px;
+            border-radius: 10px;
+            text-transform: capitalize;
+            margin-left: 6px;
+        }
+        .appt-status.confirmed { background: #e8f5e9; color: #2e7d32; }
+        .appt-status.pending { background: #fff8e1; color: #f9a825; }
+        .appt-status.cancelled { background: #ffebee; color: #c62828; }
+        .appt-status.rejected { background: #ffebee; color: #c62828; }
+        .appt-status.completed { background: #e3f2fd; color: #1565c0; }
+        .appt-status.no_show { background: #fff3e0; color: #e65100; }
+        .btn-appt-cancel {
+            padding: 7px 14px;
+            border: 1.5px solid #dc3545;
+            background: white;
+            color: #dc3545;
+            border-radius: 8px;
+            font-size: 0.8em;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .btn-appt-cancel:hover:not(:disabled) { background: #dc3545; color: white; }
+        .btn-appt-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ── Allergy tag input ── */
+        .allergy-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 8px 10px;
+            border: 1.5px solid #dee2e6;
+            border-radius: 8px;
+            min-height: 42px;
+            cursor: text;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .allergy-tags:focus-within {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
+        }
+        .allergy-tags .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #fff3e0;
+            border: 1px solid #ffb74d;
+            color: #e65100;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.82em;
+            font-weight: 500;
+        }
+        .allergy-tags .tag button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #e65100;
+            font-size: 1em;
+            padding: 0 2px;
+            line-height: 1;
+        }
+        .allergy-tags input {
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            padding: 2px 4px !important;
+            font-size: 0.88em;
+            min-width: 120px;
+            flex: 1;
+        }
+
+        /* ── Modal footer ── */
+        .modal-footer {
+            padding: 14px 24px 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            border-top: 1px solid #e9ecef;
+        }
+        .btn-cancel {
+            padding: 10px 22px;
+            border: 1.5px solid #dee2e6;
+            background: white;
+            color: #495057;
+            border-radius: 8px;
+            font-size: 0.92em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-cancel:hover { background: #f1f3f5; }
+        .btn-submit {
+            padding: 10px 28px;
+            border: none;
+            color: white;
+            border-radius: 8px;
+            font-size: 0.92em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-submit.booking { background: linear-gradient(135deg, #43a047, #2e7d32); }
+        .btn-submit.booking:hover { box-shadow: 0 6px 16px rgba(67,160,71,0.4); }
+        .btn-submit.diet { background: linear-gradient(135deg, #fb8c00, #e65100); }
+        .btn-submit.diet:hover { box-shadow: 0 6px 16px rgba(251,140,0,0.4); }
+        .btn-submit:disabled { background: #adb5bd; cursor: not-allowed; box-shadow: none; }
+
+        .field-error {
+            font-size: 0.78em;
+            color: #dc3545;
+            margin-top: 4px;
+            display: none;
+        }
+        .field-error.visible { display: block; }
+        .form-row input.invalid,
+        .form-row select.invalid { border-color: #dc3545; }
+
+        .hidden { display: none !important; }
+
+        /* ── Booking confirmation slip ── */
+        .slip { text-align: center; }
+        .slip-hospital-name { font-weight: 800; color: #1b5e20; font-size: 1.05em; }
+        .slip-hospital-sub { font-size: 0.75em; color: #888; margin-bottom: 14px; }
+        .slip-check { font-size: 2.2em; margin: 4px 0 8px; }
+        .slip-conf { font-size: 1.15em; font-weight: 800; color: #1b5e20; letter-spacing: 0.04em; margin-bottom: 14px; }
+        .slip-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.92em; margin-bottom: 14px; }
+        .slip-table td { padding: 6px 4px; border-bottom: 1px dashed #e0e0e0; }
+        .slip-table td:first-child { color: #6c757d; white-space: nowrap; padding-right: 12px; }
+        .slip-table td:last-child { font-weight: 600; color: #212529; text-align: right; }
+        .slip-instructions { text-align: left; font-size: 0.85em; color: #555; background: #f8f9fa; border-radius: 8px; padding: 10px 12px; }
+        .slip-instructions div { margin-bottom: 4px; }
+        .btn-appt-slip {
+            padding: 7px 14px;
+            border: 1.5px solid #1976d2;
+            background: white;
+            color: #1976d2;
+            border-radius: 8px;
+            font-size: 0.8em;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-appt-slip:hover { background: #e3f2fd; }
+        .appt-card-actions { display: flex; flex-direction: column; gap: 6px; }
+
+        /* Printing the slip: hide everything else on the page so "Print" / "Save as
+           PDF" produces a single clean slip, not the whole app chrome. */
+        @media print {
+            body.printing-slip > *:not(#bookingSlipModal) { display: none !important; }
+            body.printing-slip #bookingSlipModal .no-print { display: none !important; }
+            body.printing-slip #bookingSlipModal { background: none; padding: 0; }
+            body.printing-slip #bookingSlipModal .modal-card { box-shadow: none; max-width: 100%; }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 { font-size: 1.4em; }
+            .message { max-width: 88%; }
+            .container { height: 100vh; border-radius: 0; }
+            body { padding: 0; }
+            .form-two-col { grid-template-columns: 1fr; }
+            .tool-toolbar { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     AUTH GATE — shown until the patient signs in;
+     the app dashboard below is inert until then.
+══════════════════════════════════════════ -->
+<div class="auth-gate" id="authGate">
+    <div class="auth-gate-card">
+        <div class="auth-gate-brand">
+            <div class="auth-gate-icon">🏥</div>
+            <h1>Healthcare Assistant</h1>
+            <p>Sign in to book appointments, manage your visits, and get personalized health guidance.</p>
+        </div>
+
+        <div class="auth-tabs">
+            <button type="button" class="auth-tab active" id="authTabLogin" onclick="switchAuthTab('login')">Sign In</button>
+            <button type="button" class="auth-tab" id="authTabSignup" onclick="switchAuthTab('signup')">Sign Up</button>
+        </div>
+
+        <form id="authForm" novalidate onsubmit="event.preventDefault(); submitAuth();">
+            <div class="form-row hidden" id="authNameRow">
+                <label for="a_name">Full Name</label>
+                <input type="text" id="a_name" placeholder="Jane Doe" autocomplete="name" />
+            </div>
+            <div class="form-row">
+                <label for="a_email">Email <span class="required">*</span></label>
+                <input type="email" id="a_email" placeholder="you@example.com" autocomplete="email" />
+            </div>
+            <div class="form-row">
+                <label for="a_password">Password <span class="required">*</span></label>
+                <input type="password" id="a_password" placeholder="••••••••" autocomplete="current-password" />
+            </div>
+            <button type="submit" class="btn-submit booking auth-gate-submit" id="authSubmitBtn">Sign In</button>
+        </form>
+
+        <div class="auth-status" id="authStatus"></div>
+
+        <div style="text-align:center;margin-top:14px;font-size:0.85em;">
+            <a href="#" id="authAudienceLink" onclick="event.preventDefault(); toggleAuthAudience();" style="color:#667eea;text-decoration:none;font-weight:600;">👨‍⚕️ Doctor? Sign in here</a>
+        </div>
+    </div>
+</div>
+
+<div class="container hidden" id="appContainer">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="auth-bar">
+            <div class="auth-bar-inner">
+                <span class="auth-user-chip">👤 <span id="authUserLabel"></span></span>
+                <button class="auth-link-btn" onclick="openMyAppointmentsModal()">📋 My Appointments</button>
+                <button class="auth-link-btn" onclick="logout()">Log Out</button>
+            </div>
+        </div>
+        <h1>🏥 Healthcare Assistant</h1>
+        <p>AI-Powered Health Management System</p>
+    </div>
+
+    <!-- Tool Toolbar -->
+    <div class="tool-toolbar">
+        <span>Quick Actions:</span>
+        <button class="tool-btn booking" onclick="openBookingModal()">
+            📅 Book Appointment
+        </button>
+        <button class="tool-btn diet" onclick="openDietModal()">
+            🥗 Diet Plan
+        </button>
+    </div>
+
+    <!-- Chat -->
+    <div class="main-content">
+        <div class="messages-area" id="messagesArea">
+            <div class="welcome-message" id="welcomeMessage">
+                <div class="dashboard-greeting">
+                    <div class="welcome-icon">🏥</div>
+                    <h2>Welcome back, <span id="dashboardName">there</span> 👋</h2>
+                    <p>Here's your health hub for today.</p>
+                </div>
+
+                <div class="dashboard-stats">
+                    <div class="dashboard-stat">
+                        <div class="dashboard-stat-value" id="statUpcoming">–</div>
+                        <div class="dashboard-stat-label">Upcoming Appointments</div>
+                    </div>
+                </div>
+
+                <div class="dashboard-actions">
+                    <div class="dashboard-card" onclick="openBookingModal()">
+                        <div class="dashboard-card-icon">📅</div>
+                        <div class="dashboard-card-label">Book Appointment</div>
+                    </div>
+                    <div class="dashboard-card" onclick="openMyAppointmentsModal()">
+                        <div class="dashboard-card-icon">📋</div>
+                        <div class="dashboard-card-label">My Appointments</div>
+                    </div>
+                    <div class="dashboard-card" onclick="openDietModal()">
+                        <div class="dashboard-card-icon">🥗</div>
+                        <div class="dashboard-card-label">Diet Plan</div>
+                    </div>
+                </div>
+
+                <p style="margin-top:22px;color:#6c757d;font-size:0.9em;">Or just ask me anything below:</p>
+                <div class="examples">
+                    <div class="example-chip" onclick="fillExample('Show me cardiologists')">👨‍⚕️ Find doctors</div>
+                    <div class="example-chip" onclick="fillExample('Book a cardiology appointment tomorrow at 10am')">📅 Book an appointment</div>
+                    <div class="example-chip" onclick="fillExample('Cancel my appointment')">🗑️ Cancel an appointment</div>
+                    <div class="example-chip" onclick="fillExample('What are the symptoms of diabetes?')">🩺 Health questions</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <textarea
+                    id="userInput"
+                    placeholder="Ask about doctors, appointments, or health questions..."
+                    rows="1"
+                    onkeydown="handleKeyPress(event)"
+                ></textarea>
+                <!-- Tools Dropdown Menu -->
+                <div class="tools-dropdown" id="toolsDropdown">
+                    <div class="tools-dropdown-title">🛠️ Quick Tools</div>
+                    <div class="tool-option" onclick="useTool('find_doctors')">
+                        <span class="tool-option-icon">👨‍⚕️</span>
+                        <span class="tool-option-text">Find Doctors</span>
+                    </div>
+                    <div class="tool-option" onclick="useTool('check_slots')">
+                        <span class="tool-option-icon">📅</span>
+                        <span class="tool-option-text">Check Available Slots</span>
+                    </div>
+                    <div class="tool-option" onclick="useTool('doctor_schedule')">
+                        <span class="tool-option-icon">📋</span>
+                        <span class="tool-option-text">Doctor Schedule</span>
+                    </div>
+                    <div class="tool-option" onclick="useTool('book_appointment')">
+                        <span class="tool-option-icon">📅</span>
+                        <span class="tool-option-text">Book Appointment</span>
+                    </div>
+                    <div class="tool-option" onclick="useTool('diet_plan')">
+                        <span class="tool-option-icon">🥗</span>
+                        <span class="tool-option-text">Diet Plan</span>
+                    </div>
+                </div>
+            </div>
+            <button class="tools-menu-btn" onclick="toggleToolsMenu()" id="toolsMenuBtn" title="Quick Tools">⚡</button>
+            <button class="send-btn" onclick="sendMessage()" id="sendBtn">Send</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     BOOKING MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="bookingModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>📅 Book an Appointment</h2>
+            <button class="modal-close" onclick="closeBookingModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <form id="bookingForm" novalidate>
+
+                <div class="form-row">
+                    <label>Booking as</label>
+                    <div class="booking-as-chip" id="bookingAsChip">Not signed in</div>
+                </div>
+
+                <div class="form-two-col">
+                    <div class="form-row">
+                        <label for="b_date">Date <span class="required">*</span></label>
+                        <input type="date" id="b_date" />
+                        <div class="field-error" id="b_date_err">Please select a date.</div>
+                    </div>
+                    <div class="form-row">
+                        <label for="b_time">Time <span class="required">*</span></label>
+                        <select id="b_time">
+                            <option value="">-- Select time --</option>
+                        </select>
+                        <div class="field-error" id="b_time_err">Please select a time slot.</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label for="b_specialty">Specialty <span class="optional">(optional)</span></label>
+                    <select id="b_specialty">
+                        <option value="general-practice">General Practice</option>
+                        <option value="cardiology">Cardiology</option>
+                        <option value="dermatology">Dermatology</option>
+                        <option value="neurology">Neurology</option>
+                        <option value="orthopedics">Orthopedics</option>
+                        <option value="pediatrics">Pediatrics</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="b_reason">Reason for Visit <span class="optional">(optional)</span></label>
+                    <textarea id="b_reason" placeholder="e.g. Annual checkup, Fever, Headache..."></textarea>
+                </div>
+
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeBookingModal()">Cancel</button>
+            <button type="button" class="btn-submit booking" id="bookingSubmitBtn" onclick="submitBooking()">Confirm Booking</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     DIET MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="dietModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>🥗 Generate Diet Plan</h2>
+            <button class="modal-close" onclick="closeDietModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <form id="dietForm" novalidate>
+
+                <div class="form-row">
+                    <label for="d_preference">Dietary Preference <span class="required">*</span></label>
+                    <select id="d_preference">
+                        <option value="balanced">Balanced</option>
+                        <option value="vegetarian">Vegetarian</option>
+                        <option value="vegan">Vegan</option>
+                        <option value="keto">Keto</option>
+                        <option value="low-carb">Low-Carb</option>
+                        <option value="high-protein">High-Protein</option>
+                        <option value="diabetic-friendly">Diabetic-Friendly</option>
+                        <option value="gluten-free">Gluten-Free</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="d_calories">Target Daily Calories <span class="optional">(optional)</span></label>
+                    <input type="number" id="d_calories" placeholder="e.g. 2000" min="500" max="5000" step="50" />
+                    <div class="form-hint">Leave blank to use the standard 2000 kcal recommendation.</div>
+                    <div class="field-error" id="d_calories_err">Must be between 500 and 5000.</div>
+                </div>
+
+                <div class="form-row">
+                    <label>Allergies / Restrictions <span class="optional">(optional)</span></label>
+                    <div class="allergy-tags" id="allergyTagContainer" onclick="document.getElementById('allergyInput').focus()">
+                        <input type="text" id="allergyInput" placeholder="Type and press Enter or comma..." />
+                    </div>
+                    <div class="form-hint">Add items one at a time: type an allergen and press <strong>Enter</strong> or <strong>,</strong></div>
+                    <div class="field-error" id="allergy_err">Allergies must be words, not numbers or symbols (e.g. "peanuts", "shellfish").</div>
+                </div>
+
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeDietModal()">Cancel</button>
+            <button type="button" class="btn-submit diet" id="dietSubmitBtn" onclick="submitDiet()">Generate Plan</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MY APPOINTMENTS MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="myAppointmentsModal">
+    <div class="modal-card" style="max-width:640px;">
+        <div class="modal-header">
+            <h2>📋 My Appointments</h2>
+            <button class="modal-close" onclick="closeMyAppointmentsModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div id="myAppointmentsList">
+                <div style="text-align:center;color:#868e96;padding:20px;">Loading…</div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeMyAppointmentsModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     BOOKING CONFIRMATION SLIP — shown right after a successful booking (in
+     addition to the chat bubble) and reopenable anytime from My Appointments.
+     "Download" = print-to-PDF via the browser's own print dialog, scoped so
+     only this slip renders.
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="bookingSlipModal">
+    <div class="modal-card" style="max-width:440px;">
+        <div class="modal-header no-print">
+            <h2>🎫 Appointment Slip</h2>
+            <button class="modal-close" onclick="closeBookingSlipModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div id="slipPrintArea" class="slip"></div>
+        </div>
+        <div class="modal-footer no-print">
+            <button class="btn-cancel" onclick="closeBookingSlipModal()">Close</button>
+            <button class="btn-submit booking" onclick="printBookingSlip()">🖨️ Download / Print Slip</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = '';  // Same origin - frontend served by backend
+    let isProcessing = false;
+    let allergyList = [];
+    let lastLoadedAppointments = []; // cache from My Appointments, used to rebuild a slip on demand
+
+    // ── Session / auth state ────────────────────────────────────────────
+    let session = { token: null, patient: null, doctor: null, role: null };
+    let authMode = 'login';
+    let authAudience = 'patient'; // 'patient' | 'doctor' — which sign-in form is showing
+
+    function loadSession() {
+        try {
+            const raw = localStorage.getItem('healthcare_session');
+            if (raw) session = JSON.parse(raw);
+        } catch (e) { session = { token: null, patient: null, doctor: null, role: null }; }
+    }
+
+    function saveSession() {
+        localStorage.setItem('healthcare_session', JSON.stringify(session));
+    }
+
+    function clearSession() {
+        session = { token: null, patient: null, doctor: null, role: null };
+        localStorage.removeItem('healthcare_session');
+        updateAuthUI();
+    }
+
+    function isLoggedIn() {
+        return !!(session.token && session.patient && session.role !== 'doctor');
+    }
+
+    function isDoctorLoggedIn() {
+        return !!(session.token && session.doctor && session.role === 'doctor');
+    }
+
+    // Attach the bearer token (if any) to a fetch call
+    function authFetch(url, opts = {}) {
+        opts.headers = opts.headers || {};
+        if (session.token) opts.headers['Authorization'] = `Bearer ${session.token}`;
+        return fetch(url, opts);
+    }
+
+    function updateAuthUI() {
+        if (isLoggedIn()) {
+            const labelEl = document.getElementById('authUserLabel');
+            if (labelEl) labelEl.textContent = session.patient.full_name || session.patient.email;
+        }
+        const chip = document.getElementById('bookingAsChip');
+        if (chip) {
+            if (isLoggedIn()) {
+                chip.textContent = `✅ ${session.patient.full_name || session.patient.email}`;
+                chip.classList.add('signed-in');
+            } else {
+                chip.textContent = 'Not signed in';
+                chip.classList.remove('signed-in');
+            }
+        }
+    }
+
+    // Show the full-screen auth gate; the dashboard stays hidden until sign-in succeeds
+    function showAuthGate(mode, message) {
+        if (authAudience !== 'doctor') switchAuthTab(mode || 'login');
+        document.getElementById('authGate').classList.remove('hidden');
+        document.getElementById('appContainer').classList.add('hidden');
+        const statusEl = document.getElementById('authStatus');
+        statusEl.textContent = message || '';
+        statusEl.className = 'auth-status';
+    }
+
+    // Reveal the patient dashboard once a valid patient session exists
+    function showApp() {
+        document.getElementById('authGate').classList.add('hidden');
+        document.getElementById('appContainer').classList.remove('hidden');
+        updateAuthUI();
+        const nameEl = document.getElementById('dashboardName');
+        if (nameEl) nameEl.textContent = session.patient.full_name || session.patient.email.split('@')[0];
+        refreshDashboardStats();
+    }
+
+    // Clear all chat history back to the dashboard (used on logout so the next
+    // patient to sign in on this device doesn't see the previous session's chat)
+    function resetChatUI() {
+        const messagesArea = document.getElementById('messagesArea');
+        const welcome = document.getElementById('welcomeMessage');
+        Array.from(messagesArea.children).forEach(child => { if (child !== welcome) child.remove(); });
+        welcome.classList.remove('hidden');
+    }
+
+    // Validate any saved token on load; drop it silently if it's expired
+    async function restoreSession() {
+        loadSession();
+        if (!session.token) { showAuthGate('login'); return; }
+
+        // Doctors get their own dedicated dashboard page/session flow — bounce
+        // straight there instead of rendering anything in the patient chat UI.
+        if (session.role === 'doctor') {
+            window.location.href = '/doctor-dashboard';
+            return;
+        }
+
+        try {
+            const res = await authFetch(`${API_BASE}/api/auth/me`);
+            if (!res.ok) { clearSession(); showAuthGate('login'); return; }
+            const data = await res.json();
+            session.patient = data.patient;
+            saveSession();
+            showApp();
+        } catch (e) {
+            // Network hiccup - keep the cached session and show the app anyway
+            showApp();
+        }
+    }
+    restoreSession();
+
+    function logout() {
+        clearSession();
+        resetChatUI();
+        showAuthGate('login', 'You have been signed out.');
+    }
+
+    // Doctor sign-out lives on the doctor dashboard page now — kept here only
+    // in case something still links to it from a cached page.
+    function doctorLogout() {
+        clearSession();
+        showAuthGate('login', 'You have been signed out.');
+    }
+
+    // ── Patient / Doctor sign-in toggle ─────────────────────────────────
+    // Doctors are provisioned accounts (no self-signup), so doctor mode hides
+    // the Sign Up tab entirely and always submits to /api/doctor/login.
+    function toggleAuthAudience() {
+        authAudience = authAudience === 'patient' ? 'doctor' : 'patient';
+        const isDoctor = authAudience === 'doctor';
+
+        document.querySelector('.auth-tabs').classList.toggle('hidden', isDoctor);
+        document.getElementById('authNameRow').classList.toggle('hidden', true); // never shown in doctor mode; patient mode re-shows via switchAuthTab
+        document.querySelector('.auth-gate-brand h1').textContent = isDoctor ? 'Doctor Sign In' : 'Healthcare Assistant';
+        document.querySelector('.auth-gate-brand p').textContent = isDoctor
+            ? 'Sign in with your provisioned doctor account to view your appointments.'
+            : 'Sign in to book appointments, manage your visits, and get personalized health guidance.';
+        document.getElementById('authSubmitBtn').textContent = 'Sign In';
+        document.getElementById('authAudienceLink').textContent = isDoctor ? '← Back to patient sign in' : '👨‍⚕️ Doctor? Sign in here';
+
+        const statusEl = document.getElementById('authStatus');
+        statusEl.textContent = '';
+        statusEl.className = 'auth-status';
+        document.getElementById('authForm').reset();
+
+        if (!isDoctor) switchAuthTab('login');
+    }
+
+    // ── Auth tabs (Sign In / Sign Up) ───────────────────────────────────
+    function switchAuthTab(mode) {
+        authMode = mode;
+        const isLogin = mode === 'login';
+        document.getElementById('authTabLogin').classList.toggle('active', isLogin);
+        document.getElementById('authTabSignup').classList.toggle('active', !isLogin);
+        document.getElementById('authNameRow').classList.toggle('hidden', isLogin);
+        document.getElementById('authSubmitBtn').textContent = isLogin ? 'Sign In' : 'Create Account';
+        document.getElementById('a_password').setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
+    }
+
+    async function submitAuth() {
+        const email = document.getElementById('a_email').value.trim();
+        const password = document.getElementById('a_password').value;
+        const fullName = document.getElementById('a_name').value.trim();
+        const statusEl = document.getElementById('authStatus');
+
+        if (!email || !password) {
+            statusEl.textContent = 'Email and password are required.';
+            statusEl.className = 'auth-status error';
+            return;
+        }
+
+        const submitBtn = document.getElementById('authSubmitBtn');
+        submitBtn.disabled = true;
+        statusEl.textContent = '';
+        statusEl.className = 'auth-status';
+
+        const isDoctor = authAudience === 'doctor';
+        const endpoint = isDoctor ? '/api/doctor/login' : (authMode === 'login' ? '/api/auth/login' : '/api/auth/signup');
+        const body = isDoctor || authMode === 'login'
+            ? { email, password }
+            : { email, password, full_name: fullName || undefined };
+
+        try {
+            const res = await fetch(`${API_BASE}${endpoint}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                statusEl.textContent = data.detail || 'Something went wrong.';
+                statusEl.className = 'auth-status error';
+                return;
+            }
+
+            if (isDoctor) {
+                session = { token: data.access_token, patient: null, doctor: data.doctor, role: 'doctor' };
+                saveSession();
+                window.location.href = '/doctor-dashboard';
+                return;
+            }
+
+            if (data.access_token) {
+                session = { token: data.access_token, patient: data.patient, doctor: null, role: 'patient' };
+                saveSession();
+                document.getElementById('authForm').reset();
+                showApp();
+                addMessage(`✅ Signed in as ${session.patient.full_name || session.patient.email}.`, 'system');
+            } else {
+                // Signup succeeded but requires email confirmation
+                statusEl.textContent = data.message;
+                statusEl.className = 'auth-status success';
+            }
+        } catch (err) {
+            statusEl.textContent = `Network error: ${err.message}`;
+            statusEl.className = 'auth-status error';
+        } finally {
+            submitBtn.disabled = false;
+        }
+    }
+
+    // ── My Appointments ─────────────────────────────────────────────────
+    function openMyAppointmentsModal() {
+        document.getElementById('myAppointmentsModal').classList.add('open');
+        loadMyAppointments();
+    }
+    function closeMyAppointmentsModal() {
+        document.getElementById('myAppointmentsModal').classList.remove('open');
+    }
+    document.getElementById('myAppointmentsModal').addEventListener('click', function(e) {
+        if (e.target === this) closeMyAppointmentsModal();
+    });
+    document.getElementById('bookingSlipModal').addEventListener('click', function(e) {
+        if (e.target === this) closeBookingSlipModal();
+    });
+
+    async function loadMyAppointments() {
+        const listEl = document.getElementById('myAppointmentsList');
+        listEl.innerHTML = `<div style="text-align:center;color:#868e96;padding:20px;">Loading…</div>`;
+
+        try {
+            const res = await authFetch(`${API_BASE}/api/appointments/me`);
+            if (res.status === 401) {
+                clearSession();
+                closeMyAppointmentsModal();
+                showAuthGate('login', 'Your session expired. Please sign in again.');
+                return;
+            }
+            const data = await res.json();
+            const appts = data.appointments || [];
+            lastLoadedAppointments = appts;
+
+            if (!appts.length) {
+                listEl.innerHTML = `<div style="text-align:center;color:#868e96;padding:20px;">No appointments yet. Book one to see it here.</div>`;
+                return;
+            }
+
+            listEl.innerHTML = appts.map(a => `
+                <div class="appt-card" data-confirmation="${escapeHtml(a.confirmation_number)}">
+                    <div class="appt-card-info">
+                        <div class="appt-card-top">
+                            ${escapeHtml(a.doctor_name)} • ${escapeHtml(titleCase(a.specialty))}
+                            <span class="appt-status ${escapeHtml(a.status)}">${escapeHtml(a.status.replace('_',' '))}</span>
+                        </div>
+                        <div class="appt-card-sub">${escapeHtml(a.date)} at ${escapeHtml(formatTimeLabel(...a.time.split(':').map(Number)))} · 🎫 ${escapeHtml(a.confirmation_number)}</div>
+                        ${a.reason ? `<div class="appt-card-sub">${escapeHtml(a.reason)}</div>` : ''}
+                    </div>
+                    <div class="appt-card-actions">
+                        ${a.status !== 'cancelled'
+                            ? `<button class="btn-appt-slip" onclick="printSlipFor('${escapeHtml(a.confirmation_number)}')">🖨️ Slip</button>`
+                            : ''}
+                        ${(a.status === 'confirmed' || a.status === 'pending')
+                            ? `<button class="btn-appt-cancel" onclick="cancelMyAppointment('${a.confirmation_number}')">Cancel</button>`
+                            : ''}
+                    </div>
+                </div>
+            `).join('');
+        } catch (err) {
+            listEl.innerHTML = `<div style="text-align:center;color:#dc3545;padding:20px;">Network error: ${escapeHtml(err.message)}</div>`;
+        }
+    }
+
+    // Keep the dashboard's "Upcoming Appointments" stat in sync
+    async function refreshDashboardStats() {
+        if (!isLoggedIn()) return;
+        try {
+            const res = await authFetch(`${API_BASE}/api/appointments/me`);
+            if (!res.ok) return;
+            const data = await res.json();
+            const upcoming = (data.appointments || []).filter(a => a.status === 'confirmed' || a.status === 'pending').length;
+            const el = document.getElementById('statUpcoming');
+            if (el) el.textContent = upcoming;
+        } catch (e) { /* non-critical, ignore */ }
+    }
+
+    function titleCase(s) {
+        return String(s).replace(/[-_]/g, ' ').replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.substr(1).toLowerCase());
+    }
+
+    async function cancelMyAppointment(confirmationNumber) {
+        const card = document.querySelector(`.appt-card[data-confirmation="${confirmationNumber}"]`);
+        const btn = card ? card.querySelector('.btn-appt-cancel') : null;
+        if (btn) { btn.disabled = true; btn.textContent = 'Cancelling…'; }
+
+        try {
+            const res = await authFetch(`${API_BASE}/api/appointments/${encodeURIComponent(confirmationNumber)}/cancel`, {
+                method: 'POST'
+            });
+            if (res.status === 401) {
+                clearSession();
+                closeMyAppointmentsModal();
+                showAuthGate('login', 'Your session expired. Please sign in again.');
+                return;
+            }
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                alert(data.detail || data.message || 'Failed to cancel appointment.');
+                if (btn) { btn.disabled = false; btn.textContent = 'Cancel'; }
+                return;
+            }
+            loadMyAppointments();
+            refreshDashboardStats();
+        } catch (err) {
+            alert(`Network error: ${err.message}`);
+            if (btn) { btn.disabled = false; btn.textContent = 'Cancel'; }
+        }
+    }
+
+    // ── Populate time slots (09:00–17:00, 20-min intervals) ──────────────
+    (function populateTimeSlots() {
+        const sel = document.getElementById('b_time');
+        for (let h = 9; h <= 17; h++) {
+            for (let m = 0; m < 60; m += 20) {
+                if (h === 17 && m > 0) break;
+                const hh = String(h).padStart(2, '0');
+                const mm = String(m).padStart(2, '0');
+                const val = `${hh}:${mm}`;
+                const label = formatTimeLabel(h, m);
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.textContent = label;
+                sel.appendChild(opt);
+            }
+        }
+    })();
+
+    function formatTimeLabel(h, m) {
+        const period = h < 12 ? 'AM' : 'PM';
+        const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+        return `${String(displayH).padStart(2,'0')}:${String(m).padStart(2,'0')} ${period}`;
+    }
+
+    // Set date input min to today
+    (function setMinDate() {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth()+1).padStart(2,'0');
+        const dd = String(today.getDate()).padStart(2,'0');
+        document.getElementById('b_date').min = `${yyyy}-${mm}-${dd}`;
+    })();
+
+    // ── Allergy tag input ─────────────────────────────────────────────────
+    document.getElementById('allergyInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            if (addAllergyTag(this.value.trim())) this.value = '';
+        } else if (e.key === 'Backspace' && this.value === '' && allergyList.length > 0) {
+            removeAllergyTag(allergyList[allergyList.length - 1]);
+        }
+    });
+
+    // Must read like a real allergen name (letters/spaces/hyphens/apostrophes only) —
+    // rejects numbers or symbols someone might type by mistake, e.g. "123".
+    const ALLERGY_PATTERN = /^[A-Za-z][A-Za-z\s'-]{1,39}$/;
+
+    function addAllergyTag(value) {
+        const cleaned = value.replace(/,/g, '').trim();
+        const errEl = document.getElementById('allergy_err');
+        if (!cleaned) return true; // nothing to add, but let the caller clear the input
+        if (!ALLERGY_PATTERN.test(cleaned)) {
+            errEl.classList.add('visible');
+            return false; // keep the invalid text in the input so the user can fix it
+        }
+        errEl.classList.remove('visible');
+        if (!allergyList.includes(cleaned.toLowerCase())) {
+            allergyList.push(cleaned.toLowerCase());
+            renderAllergyTags();
+        }
+        return true;
+    }
+
+    function removeAllergyTag(tag) {
+        allergyList = allergyList.filter(t => t !== tag);
+        renderAllergyTags();
+    }
+
+    function renderAllergyTags() {
+        const container = document.getElementById('allergyTagContainer');
+        const input = document.getElementById('allergyInput');
+        // Remove old tags
+        container.querySelectorAll('.tag').forEach(el => el.remove());
+        allergyList.forEach(tag => {
+            const span = document.createElement('span');
+            span.className = 'tag';
+            span.innerHTML = `${tag} <button type="button" onclick="removeAllergyTag('${tag}')">×</button>`;
+            container.insertBefore(span, input);
+        });
+    }
+
+    // ── Modal open/close ──────────────────────────────────────────────────
+    function openBookingModal() {
+        if (!isLoggedIn()) {
+            showAuthGate('login', 'Please sign in to book an appointment.');
+            return;
+        }
+        document.getElementById('bookingModal').classList.add('open');
+        updateAuthUI();
+        clearBookingErrors();
+    }
+    function closeBookingModal() {
+        document.getElementById('bookingModal').classList.remove('open');
+        document.getElementById('bookingForm').reset();
+        clearBookingErrors();
+    }
+
+    function openDietModal() {
+        document.getElementById('dietModal').classList.add('open');
+        allergyList = [];
+        renderAllergyTags();
+        document.getElementById('dietForm').reset();
+        document.getElementById('allergy_err').classList.remove('visible');
+    }
+    function closeDietModal() {
+        document.getElementById('dietModal').classList.remove('open');
+    }
+
+    // Close on overlay click
+    document.getElementById('bookingModal').addEventListener('click', function(e) {
+        if (e.target === this) closeBookingModal();
+    });
+    document.getElementById('dietModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDietModal();
+    });
+
+    // ── Booking form validation & submit ──────────────────────────────────
+    function clearBookingErrors() {
+        ['b_date','b_time'].forEach(id => {
+            document.getElementById(id).classList.remove('invalid');
+            document.getElementById(id + '_err').classList.remove('visible');
+        });
+    }
+
+    async function submitBooking() {
+        if (!isLoggedIn()) {
+            closeBookingModal();
+            showAuthGate('login', 'Please sign in to book an appointment.');
+            return;
+        }
+
+        clearBookingErrors();
+        const date      = document.getElementById('b_date').value;
+        const time      = document.getElementById('b_time').value;
+        const specialty = document.getElementById('b_specialty').value;
+        const reason    = document.getElementById('b_reason').value.trim();
+
+        let valid = true;
+        if (!date) {
+            document.getElementById('b_date').classList.add('invalid');
+            document.getElementById('b_date_err').classList.add('visible');
+            valid = false;
+        }
+        if (!time) {
+            document.getElementById('b_time').classList.add('invalid');
+            document.getElementById('b_time_err').classList.add('visible');
+            valid = false;
+        }
+        if (!valid) return;
+
+        closeBookingModal();
+
+        // Post a summary message in chat
+        document.getElementById('welcomeMessage').classList.add('hidden');
+        addMessage(
+            `📅 Booking appointment — ${specialty} | ${date} at ${formatTimeLabel(...time.split(':').map(Number))}`,
+            'user'
+        );
+
+        const typingId = showTypingIndicator();
+        isProcessing = true;
+        document.getElementById('sendBtn').disabled = true;
+
+        try {
+            const res = await authFetch(`${API_BASE}/mcp/call`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: 'book_appointment',
+                    args: { date, time, specialty, reason: reason || undefined }
+                })
+            });
+            if (res.status === 401) {
+                clearSession();
+                removeTypingIndicator(typingId);
+                showAuthGate('login', 'Your session expired. Please sign in again to book.');
+                return;
+            }
+            const data = await res.json();
+            removeTypingIndicator(typingId);
+            addMessage(formatBookingResponse(data), 'assistant');
+            if (!data.error) {
+                showBookingConfirmation(data);
+                refreshDashboardStats();
+            }
+        } catch (err) {
+            removeTypingIndicator(typingId);
+            addMessage(`❌ Network error: ${err.message}`, 'assistant');
+        } finally {
+            isProcessing = false;
+            document.getElementById('sendBtn').disabled = false;
+        }
+    }
+
+    // ── Diet form validation & submit ─────────────────────────────────────
+    async function submitDiet() {
+        const preference = document.getElementById('d_preference').value;
+        const caloriesRaw = document.getElementById('d_calories').value.trim();
+        const calories = caloriesRaw ? parseInt(caloriesRaw) : null;
+
+        // Validate calories range if provided
+        if (caloriesRaw) {
+            const errEl = document.getElementById('d_calories_err');
+            if (!calories || calories < 500 || calories > 5000) {
+                document.getElementById('d_calories').classList.add('invalid');
+                errEl.classList.add('visible');
+                return;
+            } else {
+                document.getElementById('d_calories').classList.remove('invalid');
+                errEl.classList.remove('visible');
+            }
+        }
+
+        closeDietModal();
+
+        document.getElementById('welcomeMessage').classList.add('hidden');
+        const allergyLabel = allergyList.length ? ` | Allergies: ${allergyList.join(', ')}` : '';
+        addMessage(
+            `🥗 Diet plan request — ${preference}${calories ? ` | ${calories} kcal` : ''}${allergyLabel}`,
+            'user'
+        );
+
+        const typingId = showTypingIndicator();
+        isProcessing = true;
+        document.getElementById('sendBtn').disabled = true;
+
+        const args = { preferences: preference };
+        if (calories) args.calories = calories;
+        if (allergyList.length) args.allergies = [...allergyList];
+
+        try {
+            const res = await fetch(`${API_BASE}/mcp/call`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'generate_diet', args })
+            });
+            const data = await res.json();
+            removeTypingIndicator(typingId);
+            addMessage(formatDietResponse(data), 'assistant');
+        } catch (err) {
+            removeTypingIndicator(typingId);
+            addMessage(`❌ Network error: ${err.message}`, 'assistant');
+        } finally {
+            isProcessing = false;
+            document.getElementById('sendBtn').disabled = false;
+            allergyList = [];
+        }
+    }
+
+    // ── General health query ──────────────────────────────────────────────
+    function fillExample(text) {
+        document.getElementById('userInput').value = text;
+        document.getElementById('userInput').focus();
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendMessage();
+        }
+    }
+
+    // Free-text intent detection used to live here as a regex router
+    // (extractTime, extractDoctorIdentifier, detectIntent). It's been replaced
+    // by a real agent loop — sendMessage() below now just forwards the raw
+    // message to POST /api/chat (backend/agent.py) and lets Mistral decide
+    // which MCP tool to call, chain multiple tools, and hold multi-turn
+    // context, instead of matching regex patterns client-side.
+
+    // One chat session per browser tab: lets the backend's in-memory agent
+    // (backend/agent.py) hold multi-turn context and a pending booking/cancel
+    // confirmation across messages, whether or not the patient is signed in.
+    function getChatSessionId() {
+        let id = sessionStorage.getItem('healthcare_chat_session');
+        if (!id) {
+            id = (crypto.randomUUID ? crypto.randomUUID() : `sess-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+            sessionStorage.setItem('healthcare_chat_session', id);
+        }
+        return id;
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('userInput');
+        const message = input.value.trim();
+        if (!message || isProcessing) return;
+
+        document.getElementById('welcomeMessage').classList.add('hidden');
+        addMessage(message, 'user');
+        input.value = '';
+        input.style.height = 'auto';
+
+        const typingId = showTypingIndicator();
+        isProcessing = true;
+        document.getElementById('sendBtn').disabled = true;
+
+        try {
+            const res = await authFetch(`${API_BASE}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message, session_id: getChatSessionId() })
+            });
+            const data = await res.json();
+            removeTypingIndicator(typingId);
+
+            if (!res.ok || data.error) {
+                addMessage(formatError({ message: data.message || data.detail || 'Something went wrong.' }), 'assistant');
+                return;
+            }
+
+            addMessage(formatAgentReply(data), 'assistant');
+
+            if (data.requires_auth) {
+                showAuthGate('login', 'Please sign in, then repeat your request.');
+                return;
+            }
+
+            const executed = data.executed_action;
+            if (executed && executed.tool === 'book_appointment' && executed.result && !executed.result.error) {
+                showBookingConfirmation(executed.result);
+                refreshDashboardStats();
+            } else if (executed && executed.tool === 'cancel_appointment' && executed.result && !executed.result.error) {
+                refreshDashboardStats();
+            }
+        } catch (err) {
+            removeTypingIndicator(typingId);
+            addMessage(`❌ Network error: ${err.message}`, 'assistant');
+        } finally {
+            isProcessing = false;
+            document.getElementById('sendBtn').disabled = false;
+        }
+    }
+
+    // Render the agent's free-text reply the same way formatGeneralResponse
+    // renders a health answer, plus a small cue while a booking/cancel
+    // confirmation is waiting on the patient's next message.
+    function formatAgentReply(data) {
+        let html = `<div style="line-height:1.65;">`;
+        html += renderMarkdownLite(data.reply || '');
+        if (data.awaiting_confirmation) {
+            html += `<div style="margin-top:10px;padding:8px 12px;background:#fff8e1;border-left:3px solid #f9a825;border-radius:4px;font-size:0.85em;color:#8d6e00;">⏳ Waiting for your confirmation to proceed.</div>`;
+        }
+        html += `</div>`;
+        return html;
+    }
+
+    // ── Helper functions for prompts ───────────────────────────────────────
+    function promptForSpecialty() {
+        return new Promise((resolve) => {
+            const specialties = [
+                { id: 'cardiology', label: 'Cardiology (Heart)' },
+                { id: 'dermatology', label: 'Dermatology (Skin)' },
+                { id: 'neurology', label: 'Neurology (Brain/Nerves)' },
+                { id: 'orthopedics', label: 'Orthopedics (Bones/Joints)' },
+                { id: 'pediatrics', label: 'Pediatrics (Children)' },
+                { id: 'general-practice', label: 'General Practice' }
+            ];
+            
+            let html = `<div style="padding:14px;background:linear-gradient(135deg,#e3f2fd,#bbdefb);border-left:4px solid #1976d2;border-radius:8px;">`;
+            html += `<div style="margin-bottom:10px;font-weight:600;color:#0d47a1;">🏥 Which specialty are you looking for?</div>`;
+            html += `<div style="display:flex;flex-wrap:wrap;gap:6px;">`;
+            
+            specialties.forEach(spec => {
+                html += `<button onclick="window._resolveSpecialty('${spec.id}')" style="padding:6px 12px;background:white;border:1px solid #90caf9;border-radius:16px;cursor:pointer;font-size:0.85em;color:#1565c0;">${spec.label}</button>`;
+            });
+            
+            html += `</div></div>`;
+            
+            window._resolveSpecialty = (val) => {
+                delete window._resolveSpecialty;
+                resolve(val);
+            };
+            
+            addMessage(html, 'assistant');
+        });
+    }
+
+    function promptForDate() {
+        return new Promise((resolve) => {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const day3 = new Date(today);
+            day3.setDate(day3.getDate() + 2);
+            const day4 = new Date(today);
+            day4.setDate(day4.getDate() + 3);
+            const day5 = new Date(today);
+            day5.setDate(day5.getDate() + 4);
+            
+            const formatDate = (d) => d.toISOString().split('T')[0];
+            const formatDisplay = (d) => d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            
+            let html = `<div style="padding:14px;background:linear-gradient(135deg,#e8f5e9,#c8e6c9);border-left:4px solid #43a047;border-radius:8px;">`;
+            html += `<div style="margin-bottom:10px;font-weight:600;color:#1b5e20;">📅 Which date do you prefer?</div>`;
+            html += `<div style="display:flex;flex-wrap:wrap;gap:6px;">`;
+            
+            [today, tomorrow, day3, day4, day5].forEach(d => {
+                html += `<button onclick="window._resolveDate('${formatDate(d)}')" style="padding:6px 12px;background:white;border:1px solid #a5d6a7;border-radius:16px;cursor:pointer;font-size:0.85em;color:#2e7d32;">${formatDisplay(d)}</button>`;
+            });
+            
+            html += `</div></div>`;
+            
+            window._resolveDate = (val) => {
+                delete window._resolveDate;
+                resolve(val);
+            };
+            
+            addMessage(html, 'assistant');
+        });
+    }
+
+    function promptForDoctorId() {
+        return new Promise((resolve) => {
+            let html = `<div style="padding:14px;background:linear-gradient(135deg,#fff3e0,#ffe0b2);border-left:4px solid #fb8c00;border-radius:8px;">`;
+            html += `<div style="margin-bottom:10px;font-weight:600;color:#e65100;">👨‍⚕️ Please enter the Doctor ID</div>`;
+            html += `<div style="font-size:0.85em;color:#666;margin-bottom:10px;">Format: doc_XXX (e.g., doc_001)</div>`;
+            html += `<input type="text" id="tempDoctorId" placeholder="doc_001" style="padding:8px 12px;border:1px solid #ffb74d;border-radius:8px;width:120px;" />`;
+            html += ` <button onclick="window._resolveDoctorId(document.getElementById('tempDoctorId').value)" style="padding:8px 16px;background:#fb8c00;color:white;border:none;border-radius:8px;cursor:pointer;">Continue</button>`;
+            html += `</div>`;
+            
+            window._resolveDoctorId = (val) => {
+                if (val && val.trim()) {
+                    delete window._resolveDoctorId;
+                    resolve(val.trim());
+                }
+            };
+
+            addMessage(html, 'assistant');
+        });
+    }
+
+    function promptForTime() {
+        return new Promise((resolve) => {
+            const times = ['09:00', '09:40', '10:20', '11:00', '13:00', '14:00', '15:00', '16:00', '16:40'];
+            let html = `<div style="padding:14px;background:linear-gradient(135deg,#e3f2fd,#bbdefb);border-left:4px solid #1976d2;border-radius:8px;">`;
+            html += `<div style="margin-bottom:10px;font-weight:600;color:#0d47a1;">⏰ What time works for you?</div>`;
+            html += `<div style="display:flex;flex-wrap:wrap;gap:6px;">`;
+
+            times.forEach(t => {
+                const [h, m] = t.split(':').map(Number);
+                html += `<button onclick="window._resolveTime('${t}')" style="padding:6px 12px;background:white;border:1px solid #90caf9;border-radius:16px;cursor:pointer;font-size:0.85em;color:#1565c0;">${formatTimeLabel(h, m)}</button>`;
+            });
+
+            html += `</div></div>`;
+
+            window._resolveTime = (val) => {
+                delete window._resolveTime;
+                resolve(val);
+            };
+
+            addMessage(html, 'assistant');
+        });
+    }
+
+    function promptYesNo(question) {
+        return new Promise((resolve) => {
+            let html = `<div style="padding:14px;background:linear-gradient(135deg,#fff3e0,#ffe0b2);border-left:4px solid #fb8c00;border-radius:8px;">`;
+            html += `<div style="margin-bottom:10px;font-weight:600;color:#e65100;">${escapeHtml(question)}</div>`;
+            html += `<div style="display:flex;gap:8px;">`;
+            html += `<button onclick="window._resolveYesNo(true)" style="padding:7px 16px;background:#e53935;color:white;border:none;border-radius:16px;cursor:pointer;font-weight:600;font-size:0.85em;">Yes, cancel it</button>`;
+            html += `<button onclick="window._resolveYesNo(false)" style="padding:7px 16px;background:white;border:1px solid #ddd;border-radius:16px;cursor:pointer;font-size:0.85em;">No, keep it</button>`;
+            html += `</div></div>`;
+
+            window._resolveYesNo = (val) => {
+                delete window._resolveYesNo;
+                resolve(val);
+            };
+
+            addMessage(html, 'assistant');
+        });
+    }
+
+    async function promptForAppointmentToCancel() {
+        let appts = [];
+        try {
+            const res = await authFetch(`${API_BASE}/api/appointments/me`);
+            if (res.ok) {
+                const data = await res.json();
+                appts = (data.appointments || []).filter(a => a.status === 'confirmed');
+            }
+        } catch (e) { /* fall through to the empty-state message below */ }
+
+        if (!appts.length) {
+            addMessage('You have no upcoming appointments to cancel.', 'system');
+            return null;
+        }
+
+        return new Promise((resolve) => {
+            let html = `<div style="padding:14px;background:linear-gradient(135deg,#ffebee,#ffcdd2);border-left:4px solid #e53935;border-radius:8px;">`;
+            html += `<div style="margin-bottom:10px;font-weight:600;color:#c62828;">Which appointment would you like to cancel?</div>`;
+            html += `<div style="display:flex;flex-direction:column;gap:6px;">`;
+
+            appts.forEach(a => {
+                const [h, m] = a.time.split(':').map(Number);
+                html += `<button onclick="window._resolveApptToCancel('${a.confirmation_number}')" style="text-align:left;padding:8px 12px;background:white;border:1px solid #ef9a9a;border-radius:10px;cursor:pointer;font-size:0.85em;color:#333;">🎫 ${escapeHtml(a.confirmation_number)} — ${escapeHtml(a.doctor_name)} · ${escapeHtml(a.date)} at ${formatTimeLabel(h, m)}</button>`;
+            });
+
+            html += `</div></div>`;
+
+            window._resolveApptToCancel = (val) => {
+                delete window._resolveApptToCancel;
+                resolve(val);
+            };
+
+            addMessage(html, 'assistant');
+        });
+    }
+
+    // ── Response formatters ───────────────────────────────────────────────
+    function formatError(data) {
+        let html = `<div style="padding:14px;background:linear-gradient(135deg,#fee,#fdd);border-left:4px solid #d32f2f;border-radius:8px;">`;
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-size:18px;">❌</span><strong style="color:#c62828;">Error</strong></div>`;
+        html += `<div style="color:#333;line-height:1.6;">${escapeHtml(data.message || 'An error occurred.')}</div>`;
+        if (data.suggestion) {
+            html += `<div style="margin-top:10px;padding:10px;background:#e3f2fd;border-left:3px solid #1976d2;border-radius:4px;color:#1565c0;font-size:0.9em;">${escapeHtml(data.suggestion)}</div>`;
+        }
+        html += `</div>`;
+        return html;
+    }
+
+    function formatBookingResponse(data) {
+        if (data.error) return formatError(data);
+        let html = `<div style="padding:16px;background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border-left:4px solid #43a047;border-radius:8px;">`;
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:20px;">✅</span><strong style="color:#2e7d32;font-size:1.05em;">Appointment Confirmed</strong></div>`;
+        html += `<div style="background:white;border-radius:8px;padding:12px;margin-bottom:10px;">`;
+        html += `<div style="font-size:1.1em;font-weight:700;color:#1b5e20;margin-bottom:8px;">🎫 ${escapeHtml(data.confirmation_number)}</div>`;
+        if (data.details) {
+            html += `<table style="width:100%;border-collapse:collapse;font-size:0.9em;">`;
+            for (const [k, v] of Object.entries(data.details)) {
+                html += `<tr><td style="padding:4px 8px 4px 0;color:#6c757d;white-space:nowrap;">${escapeHtml(k)}</td><td style="padding:4px 0;font-weight:500;">${escapeHtml(String(v))}</td></tr>`;
+            }
+            html += `</table>`;
+        }
+        html += `</div>`;
+        if (data.instructions) {
+            html += `<div style="font-size:0.85em;color:#555;">`;
+            data.instructions.forEach(i => { html += `<div style="margin-bottom:4px;">${escapeHtml(i)}</div>`; });
+            html += `</div>`;
+        }
+        html += `</div>`;
+        return html;
+    }
+
+    // ── Booking confirmation slip modal ─────────────────────────────────────
+    // The chat bubble (formatBookingResponse) can scroll out of view, so a
+    // successful booking also gets its own confirmation screen with a
+    // downloadable/printable slip — the concrete answer to "how do I know it's
+    // really booked?" beyond just a chat message.
+    function showBookingConfirmation(data) {
+        if (data.error) return; // nothing to confirm
+        const area = document.getElementById('slipPrintArea');
+
+        let html = `<div class="slip-hospital-name">🏥 Healthcare Assistant Clinic</div>`;
+        html += `<div class="slip-hospital-sub">Appointment Confirmation Slip</div>`;
+        html += `<div class="slip-check">✅</div>`;
+        html += `<div class="slip-conf">🎫 ${escapeHtml(data.confirmation_number || '')}</div>`;
+
+        if (data.details) {
+            html += `<table class="slip-table">`;
+            for (const [k, v] of Object.entries(data.details)) {
+                html += `<tr><td>${escapeHtml(k)}</td><td>${escapeHtml(String(v))}</td></tr>`;
+            }
+            html += `</table>`;
+        }
+
+        if (data.instructions) {
+            html += `<div class="slip-instructions">`;
+            data.instructions.forEach(i => { html += `<div>${escapeHtml(i)}</div>`; });
+            html += `</div>`;
+        }
+
+        area.innerHTML = html;
+        document.getElementById('bookingSlipModal').classList.add('open');
+    }
+
+    function closeBookingSlipModal() {
+        document.getElementById('bookingSlipModal').classList.remove('open');
+    }
+
+    function printBookingSlip() {
+        document.body.classList.add('printing-slip');
+        window.print();
+    }
+    window.addEventListener('afterprint', () => document.body.classList.remove('printing-slip'));
+
+    // Rebuild a slip-compatible object from a My Appointments row, so a past
+    // booking's slip can be reopened without re-calling book_appointment.
+    function slipDataFromAppointment(a) {
+        return {
+            confirmation_number: a.confirmation_number,
+            details: {
+                Patient: (session.patient && (session.patient.full_name || session.patient.email)) || 'Patient',
+                Doctor: a.doctor_name,
+                Date: a.date,
+                Time: a.time,
+                Specialty: titleCase(a.specialty),
+                Reason: a.reason || 'General checkup',
+                Status: a.status.charAt(0).toUpperCase() + a.status.slice(1)
+            },
+            instructions: [
+                '📝 Please arrive 15 minutes early',
+                '🪪 Bring your insurance card and ID',
+                '📞 To cancel or reschedule, contact us 24 hours in advance'
+            ]
+        };
+    }
+
+    function printSlipFor(confirmationNumber) {
+        const appt = lastLoadedAppointments.find(a => a.confirmation_number === confirmationNumber);
+        if (!appt) return;
+        showBookingConfirmation(slipDataFromAppointment(appt));
+    }
+
+    function formatCancelResponse(data) {
+        if (data.error) return formatError(data);
+        let html = `<div style="padding:16px;background:linear-gradient(135deg,#ffebee,#ffcdd2);border-left:4px solid #e53935;border-radius:8px;">`;
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:20px;">🗑️</span><strong style="color:#c62828;">Appointment Cancelled</strong></div>`;
+        html += `<div style="color:#333;">${escapeHtml(data.message || 'Your appointment has been cancelled.')}</div>`;
+        if (data.refund_policy) {
+            html += `<div style="margin-top:8px;font-size:0.85em;color:#555;">${escapeHtml(data.refund_policy)}</div>`;
+        }
+        html += `</div>`;
+        return html;
+    }
+
+    function formatDietResponse(data) {
+        if (data.error) return formatError(data);
+        let html = `<div style="padding:16px;background:linear-gradient(135deg,#fff8e1,#fff3e0);border-left:4px solid #fb8c00;border-radius:8px;">`;
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:20px;">🥗</span><strong style="color:#e65100;font-size:1.05em;">Your Personalized Diet Plan</strong></div>`;
+        const meta = [];
+        if (data.preference) meta.push(`<span style="background:#fff3e0;border:1px solid #ffb74d;color:#e65100;padding:2px 10px;border-radius:12px;font-size:0.8em;font-weight:600;">${escapeHtml(data.preference)}</span>`);
+        if (data.daily_calories) meta.push(`<span style="background:#e8f5e9;border:1px solid #a5d6a7;color:#2e7d32;padding:2px 10px;border-radius:12px;font-size:0.8em;font-weight:600;">${data.daily_calories} kcal</span>`);
+        if (meta.length) html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">${meta.join('')}</div>`;
+        if (data.plan) {
+            // Render plan as styled markdown-like blocks
+            const planHtml = escapeHtml(data.plan)
+                .replace(/## (.+)/g, '<div style="margin:10px 0 4px;font-weight:700;color:#bf360c;">$1</div>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^- (.+)/gm, '<div style="padding-left:12px;margin:2px 0;">• $1</div>');
+            html += `<div style="background:white;border-radius:8px;padding:14px;font-size:0.92em;line-height:1.65;white-space:pre-wrap;">${planHtml}</div>`;
+        } else if (data.meals) {
+            html += `<div style="background:white;border-radius:8px;padding:14px;">`;
+            for (const [meal, food] of Object.entries(data.meals)) {
+                html += `<div style="margin-bottom:8px;"><strong style="color:#bf360c;">${escapeHtml(meal)}</strong><div style="color:#555;font-size:0.9em;margin-top:2px;">${escapeHtml(food)}</div></div>`;
+            }
+            html += `</div>`;
+        }
+        if (data.tips) {
+            html += `<div style="margin-top:10px;font-size:0.84em;color:#555;">`;
+            data.tips.forEach(t => { html += `<div style="margin-bottom:3px;">${escapeHtml(t)}</div>`; });
+            html += `</div>`;
+        }
+        html += `</div>`;
+        return html;
+    }
+
+    function formatDoctorsResponse(data) {
+        if (data.error) return formatError(data);
+        
+        let html = `<div style="padding:16px;background:linear-gradient(135deg,#e3f2fd,#bbdefb);border-left:4px solid #1976d2;border-radius:8px;">`;
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:20px;">👨‍⚕️</span><strong style="color:#0d47a1;font-size:1.05em;">Available Doctors</strong></div>`;
+        
+        if (data.specialties_available && data.specialties_available.length > 0) {
+            html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">`;
+            data.specialties_available.forEach(spec => {
+                html += `<span style="background:white;border:1px solid #90caf9;color:#1565c0;padding:2px 10px;border-radius:12px;font-size:0.8em;font-weight:600;">${escapeHtml(spec)}</span>`;
+            });
+            html += `</div>`;
+        }
+        
+        if (data.doctors && data.doctors.length > 0) {
+            html += `<div style="background:white;border-radius:8px;padding:12px;">`;
+            data.doctors.forEach((doc, idx) => {
+                if (idx > 0) html += `<div style="border-top:1px solid #e3f2fd;margin:8px 0;"></div>`;
+                html += `<div style="display:flex;justify-content:space-between;align-items:center;">`;
+                html += `<div><strong style="color:#1565c0;">${escapeHtml(doc.name)}</strong>`;
+                html += `<div style="font-size:0.85em;color:#555;">${escapeHtml(doc.specialty)} • ${escapeHtml(doc.experience)}</div></div>`;
+                html += `<span style="font-size:0.75em;color:#888;background:#f5f5f5;padding:2px 8px;border-radius:10px;">${escapeHtml(doc.id)}</span>`;
+                html += `</div>`;
+            });
+            html += `</div>`;
+        }
+        
+        if (data.suggestion) {
+            html += `<div style="margin-top:10px;font-size:0.85em;color:#555;">💡 ${escapeHtml(data.suggestion)}</div>`;
+        }
+        
+        html += `</div>`;
+        return html;
+    }
+
+    const LOAD_BADGES = {
+        low:      { emoji: '🟢', label: 'Low wait' },
+        moderate: { emoji: '🟡', label: 'Moderate wait' },
+        busy:     { emoji: '🔴', label: 'Busy' }
+    };
+
+    function formatSlotsResponse(data) {
+        if (data.error) return formatError(data);
+
+        let html = `<div style="padding:16px;background:linear-gradient(135deg,#e8f5e9,#c8e6c9);border-left:4px solid #43a047;border-radius:8px;">`;
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:20px;">📅</span><strong style="color:#1b5e20;font-size:1.05em;">Available Slots</strong></div>`;
+
+        html += `<div style="background:white;border-radius:8px;padding:10px 12px;margin-bottom:12px;">`;
+        html += `<div style="font-weight:600;color:#2e7d32;">${escapeHtml(data.specialty || '')}</div>`;
+        html += `<div style="font-size:0.9em;color:#555;">${escapeHtml(data.date || '')}</div>`;
+        html += `</div>`;
+
+        // ── Doctor queue / load view (real hospital "how busy is this doctor" feel) ──
+        if (data.queue && Object.keys(data.queue).length > 0) {
+            html += `<div style="background:white;border-radius:8px;padding:10px 12px;margin-bottom:12px;">`;
+            html += `<div style="font-size:0.8em;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.03em;">Doctor Availability Today</div>`;
+            for (const q of Object.values(data.queue)) {
+                const badge = LOAD_BADGES[q.load] || LOAD_BADGES.low;
+                html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;">`;
+                html += `<span style="font-size:0.9em;color:#333;">${escapeHtml(q.doctor_name)}</span>`;
+                html += `<span style="font-size:0.82em;color:#555;">${badge.emoji} ${badge.label} · ~${q.booked_today} booked, ~${q.estimated_wait_minutes} min wait</span>`;
+                html += `</div>`;
+            }
+            html += `</div>`;
+        }
+
+        // Merge available + occupied slots into one time-sorted grid so the user
+        // sees the doctor's real day, not just the free gaps.
+        const byTime = {};
+        const addEntries = (map, status) => {
+            if (!map) return;
+            for (const [time, docs] of Object.entries(map)) {
+                if (!byTime[time]) byTime[time] = [];
+                docs.forEach(d => byTime[time].push({ ...d, status }));
+            }
+        };
+        addEntries(data.available_slots, 'available');
+        addEntries(data.occupied_slots, 'booked');
+        const sortedTimes = Object.keys(byTime).sort();
+
+        if (sortedTimes.length > 0) {
+            html += `<div style="background:white;border-radius:8px;padding:12px;">`;
+            html += `<div style="font-size:0.85em;color:#666;margin-bottom:8px;">Total open slots: ${data.total_options || 0} · Tap a green slot to book it instantly</div>`;
+
+            sortedTimes.forEach(time => {
+                html += `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">`;
+                html += `<span style="background:#e8f5e9;color:#2e7d32;padding:4px 10px;border-radius:12px;font-weight:600;font-size:0.85em;white-space:nowrap;">${escapeHtml(time)}</span>`;
+                html += `<div style="flex:1;display:flex;flex-wrap:wrap;gap:6px;">`;
+                byTime[time].forEach(doc => {
+                    if (doc.status === 'available') {
+                        html += `<button onclick="quickBookSlot('${jsAttr(data.specialty || '')}','${jsAttr(data.date || '')}','${jsAttr(time)}','${jsAttr(doc.doctor_id)}','${jsAttr(doc.doctor_name)}')" style="padding:5px 12px;background:#e8f5e9;border:1px solid #81c784;border-radius:14px;cursor:pointer;font-size:0.85em;color:#2e7d32;font-weight:500;">✅ ${escapeHtml(doc.doctor_name)}</button>`;
+                    } else {
+                        html += `<span style="padding:5px 12px;background:#f5f5f5;border:1px solid #e0e0e0;border-radius:14px;font-size:0.85em;color:#999;text-decoration:line-through;">${escapeHtml(doc.doctor_name)}</span>`;
+                    }
+                });
+                html += `</div></div>`;
+            });
+            html += `</div>`;
+        } else {
+            html += `<div style="background:white;border-radius:8px;padding:12px;text-align:center;color:#666;">No available slots found.</div>`;
+        }
+
+        if (data.suggestion) {
+            html += `<div style="margin-top:10px;font-size:0.85em;color:#555;">💡 ${escapeHtml(data.suggestion)}</div>`;
+        }
+
+        html += `</div>`;
+        return html;
+    }
+
+    // Clicking a free slot pill in formatSlotsResponse books it immediately —
+    // no need to retype specialty/date/time that are already known.
+    async function quickBookSlot(specialty, date, time, doctorId, doctorName) {
+        if (isProcessing) return;
+        if (!isLoggedIn()) {
+            showAuthGate('login', 'Please sign in to book an appointment.');
+            return;
+        }
+
+        const [h, m] = time.split(':').map(Number);
+        addMessage(`📅 Book ${doctorName} — ${specialty} on ${date} at ${formatTimeLabel(h, m)}`, 'user');
+
+        const typingId = showTypingIndicator();
+        isProcessing = true;
+        document.getElementById('sendBtn').disabled = true;
+
+        try {
+            const res = await authFetch(`${API_BASE}/mcp/call`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'book_appointment', args: { date, time, specialty, doctor_id: doctorId } })
+            });
+            if (res.status === 401) {
+                clearSession();
+                removeTypingIndicator(typingId);
+                showAuthGate('login', 'Your session expired. Please sign in again to book.');
+                return;
+            }
+            const data = await res.json();
+            removeTypingIndicator(typingId);
+            addMessage(formatBookingResponse(data), 'assistant');
+            if (!data.error) {
+                showBookingConfirmation(data);
+                refreshDashboardStats();
+            }
+        } catch (err) {
+            removeTypingIndicator(typingId);
+            addMessage(`❌ Network error: ${err.message}`, 'assistant');
+        } finally {
+            isProcessing = false;
+            document.getElementById('sendBtn').disabled = false;
+        }
+    }
+
+    function formatScheduleResponse(data) {
+        if (data.error) return formatError(data);
+        
+        let html = `<div style="padding:16px;background:linear-gradient(135deg,#fff3e0,#ffe0b2);border-left:4px solid #fb8c00;border-radius:8px;">`;
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-size:20px;">📋</span><strong style="color:#e65100;font-size:1.05em;">Doctor Schedule</strong></div>`;
+        
+        if (data.doctor) {
+            html += `<div style="background:white;border-radius:8px;padding:12px;margin-bottom:12px;">`;
+            html += `<div style="font-weight:700;color:#e65100;font-size:1.1em;">${escapeHtml(data.doctor.name)}</div>`;
+            html += `<div style="font-size:0.9em;color:#666;">${escapeHtml(data.doctor.specialty)} • ${escapeHtml(data.doctor.id)}</div>`;
+            html += `</div>`;
+        }
+        
+        if (data.schedule && data.schedule.length > 0) {
+            html += `<div style="background:white;border-radius:8px;padding:12px;">`;
+            html += `<div style="font-weight:600;color:#bf360c;margin-bottom:8px;">Weekly Hours</div>`;
+            data.schedule.forEach(slot => {
+                html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f5;">`;
+                html += `<span style="color:#555;">${escapeHtml(slot.day)}</span>`;
+                html += `<span style="font-weight:500;color:#2e7d32;">${escapeHtml(slot.hours)}</span>`;
+                html += `</div>`;
+            });
+            html += `</div>`;
+        } else {
+            html += `<div style="background:white;border-radius:8px;padding:12px;text-align:center;color:#666;">No schedule information available.</div>`;
+        }
+        
+        html += `</div>`;
+        return html;
+    }
+
+    function formatGeneralResponse(data) {
+        if (data.error) return formatError(data);
+        let html = `<div style="line-height:1.65;">`;
+        if (data.answer) {
+            html += renderMarkdownLite(data.answer);
+        }
+        if (data.disclaimer) {
+            html += `<div style="margin-top:12px;padding:8px 12px;background:#f3e5f5;border-left:3px solid #9c27b0;border-radius:4px;font-size:0.83em;color:#6a1b9a;">${escapeHtml(data.disclaimer)}</div>`;
+        }
+        html += `</div>`;
+        return html;
+    }
+
+    // Escape a value for safe embedding inside a single-quoted inline onclick="..."
+    // JS string literal (distinct from escapeHtml, which is for HTML text content).
+    function jsAttr(str) {
+        return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g,'&')
+            .replace(/</g,'<')
+            .replace(/>/g,'>')
+            .replace(/"/g,'"');
+    }
+
+    // Minimal markdown -> HTML for AI-generated free text (chat replies,
+    // health Q&A answers). The assistant (Mistral) commonly formats with
+    // "## heading", "**bold**", and "- " bullets even though this chat used
+    // to just print those literal characters — this renders the same subset
+    // formatDietResponse already handles for diet plans. Not a general
+    // markdown parser; deliberately limited to what the assistant actually uses.
+    function renderMarkdownLite(raw) {
+        return escapeHtml(raw)
+            .replace(/^## (.+)$/gm, '<div style="margin:10px 0 4px;font-weight:700;">$1</div>')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/^[-*] (.+)$/gm, '<div style="padding-left:12px;margin:2px 0;">• $1</div>')
+            .replace(/\n\n/g, '</p><p style="margin-top:8px;">')
+            .replace(/\n/g, '<br>');
+    }
+
+    // ── Chat helpers ──────────────────────────────────────────────────────
+    function addMessage(content, type) {
+        const messagesArea = document.getElementById('messagesArea');
+        const messageDiv   = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        // content is either plain text (user/system) or pre-built safe HTML from formatters
+        if (type === 'user') {
+            contentDiv.textContent = content;
+        } else {
+            contentDiv.innerHTML = content;
+        }
+        messageDiv.appendChild(contentDiv);
+
+        if (type !== 'system') {
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            timeDiv.textContent = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+            messageDiv.appendChild(timeDiv);
+        }
+
+        messagesArea.appendChild(messageDiv);
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+        const messagesArea = document.getElementById('messagesArea');
+        const div = document.createElement('div');
+        div.className = 'message assistant';
+        div.id = 'typing-' + Date.now();
+        div.innerHTML = `<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+        messagesArea.appendChild(div);
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+        return div.id;
+    }
+
+    function removeTypingIndicator(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+
+    // ── Tools Menu Functions ──────────────────────────────────────────────
+    function toggleToolsMenu() {
+        const dropdown = document.getElementById('toolsDropdown');
+        dropdown.classList.toggle('show');
+    }
+
+    // Close tools menu when clicking outside
+    document.addEventListener('click', function(e) {
+        const dropdown = document.getElementById('toolsDropdown');
+        const btn = document.getElementById('toolsMenuBtn');
+        if (!dropdown.contains(e.target) && e.target !== btn) {
+            dropdown.classList.remove('show');
+        }
+    });
+
+    function useTool(toolName) {
+        // Hide the dropdown
+        document.getElementById('toolsDropdown').classList.remove('show');
+        
+        // Set appropriate query based on tool
+        const queries = {
+            'find_doctors': 'Show me doctors',
+            'check_slots': 'Check available slots',
+            'doctor_schedule': 'What is the working time of Dr.',
+            'book_appointment': '',
+            'diet_plan': ''
+        };
+        
+        if (toolName === 'book_appointment') {
+            openBookingModal();
+            return;
+        }
+        
+        if (toolName === 'diet_plan') {
+            openDietModal();
+            return;
+        }
+        
+        // Fill the input and focus
+        document.getElementById('userInput').value = queries[toolName] || '';
+        document.getElementById('userInput').focus();
+        
+        // Auto-trigger send for certain tools
+        if (toolName === 'find_doctors') {
+            setTimeout(() => sendMessage(), 100);
+        }
+    }
+
+    // Auto-grow textarea
+    document.getElementById('userInput').addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 110) + 'px';
+    });
+</script>
+</body>
+</html>

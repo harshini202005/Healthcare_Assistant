@@ -1,0 +1,38 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# This app keeps chat session state in memory (see backend/agent.py), so it
+# MUST run as a single instance with a single worker process. Do not enable
+# autoscaling or bump numInstances above 1 — doing so would scatter a
+# patient's conversation across processes and randomly "forget" it mid-chat.
+services:
+  - type: web
+    name: healthcare-assistant
+    runtime: python
+    plan: starter # free tier spins down on idle (cold starts ~30-50s);
+                   # starter keeps the process warm — recommended for a
+                   # user-facing app. Downgrade to "free" if cost matters more.
+    region: oregon # pick the region closest to your users
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    numInstances: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ENVIRONMENT
+        value: production
+      - key: MISTRAL_API_KEY
+        sync: false # set manually in the Render dashboard — never commit secrets
+      - key: MISTRAL_MODEL
+        value: mistral-small-latest
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://healthcare-assistant.onrender.com # update after first deploy
+                                                            # to match your actual *.onrender.com
+                                                            # URL (or custom domain) — same-origin
+                                                            # frontend calls work either way, this
+                                                            # only matters if something calls the
+                                                            # API cross-origin

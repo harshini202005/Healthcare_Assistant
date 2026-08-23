@@ -1,0 +1,8 @@
+fastapi==0.141.1
+uvicorn[standard]==0.52.3
+python-dotenv==1.2.3
+mistralai==1.5.1
+supabase==2.31.0
+websockets==15.0.1
+httpx==0.28.1
+pydantic==2.13.4
